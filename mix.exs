@@ -59,7 +59,7 @@ defmodule Rpi0Bt.Mixfile do
   def deps("host"), do: []
   def deps("rpi0") do
     [{:nerves_runtime, "~> 0.1.0"},
-     {:"nerves_system_rpi0", "~> 0.12.0-dev", path: "../nerves-sources/nerves_system_rpi",
+     {:"nerves_system_rpi0", "~> 0.13.0-dev", path: "../nerves-sources/nerves_system_rpi0",
         runtime: false},
       {:nerves_interim_wifi, "~> 0.2.0"}]
    end
