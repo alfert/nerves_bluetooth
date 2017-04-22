@@ -8,8 +8,14 @@ defmodule Bluetooth do
     start_daemon("/usr/libexec/bluetooth/bluetoothd", [])
   end
 
-  def run_hciuart() do
-    start_daemon("/usr/bin/hciattach", ["/dev/ttyAMA0", "bcm43xx", "921600", "noflow", "-"])
+  def run_hciuart(), do: run_hciuart(5, 5)
+  def run_hciuart(n, 0), do: IO.puts("hciattach failed #{n} times. Giving up!")
+  def run_hciuart(n, k) do
+    case start_daemon("/usr/bin/hciattach",
+      ["/dev/ttyAMA0", "bcm43xx", "921600", "noflow", "-"]) do
+        0 -> IO.puts("hciattach succeeded!")
+        _ -> run_hciuart(n, k - 1)
+      end
   end
 
   @doc """
