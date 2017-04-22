@@ -46,10 +46,12 @@ defmodule Bluetooth do
         # the demon has stopped working, so we crash, because
         # the demaon shall run forever. Let the supervisor
         # deal with this situation properly
-        raise("#{path} has stopped working with status #{inspect status}")
+        status
+        # raise("#{path} has stopped working with status #{inspect status}")
     end
   end
 
+  def cmd(prog), do: cmd(prog, [])
   def cmd(prog, param) when is_binary(param), do: cmd(prog, [param])
   def cmd(prog, params) do
     {out, rc} = System.cmd(prog, params, into: IO.stream(:stdio, :line))
