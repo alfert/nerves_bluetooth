@@ -15,3 +15,6 @@ config :rpi0_bt, :wlan0,
   ssid: "your-ssid",
   key_mgmt: :"WPA-PSK",
   psk: "your-key"
+
+  config :nerves, :firmware,
+    rootfs_additions: "rootfs-additions"
