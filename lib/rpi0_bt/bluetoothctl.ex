@@ -4,16 +4,38 @@ defmodule Bluetooth.Ctl do
   the `bluez` stack with the devices.
   """
   use GenServer
+  require Bluetooth.Ctl.Macros
+  alias Bluetooth.Ctl.Macros
 
   def start_link() do
     GenServer.start_link(__MODULE__, [], [name: __MODULE__])
   end
+  def start() do
+    GenServer.start(__MODULE__, [], [name: __MODULE__])
+  end
+
+  def quit, do: cmd("quit")
+  def help, do: cmd("help")
+  def version, do: cmd("version")
+  def list, do: cmd("list")
+  def devices, do: cmd("devices")
+
+  Macros.def_switch("scan")
+  Macros.def_switch("power")
+  Macros.def_switch("pairable")
+  Macros.def_switch("discoverable")
+  Macros.def_switch("notify")
 
   @doc """
   Sends `data` synchronously to the port.
   """
   def cmd(data) do
-    GenServer.call(__MODULE__, {:cmd, data})
+    cmd = if String.ends_with?(data, "\n") do
+      data
+    else
+      data <> "\n"
+    end
+    GenServer.call(__MODULE__, {:cmd, cmd})
   end
 
   defstruct [port: nil, verbose: true]
