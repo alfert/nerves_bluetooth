@@ -13,6 +13,9 @@ defmodule Bluetooth.Ctl do
   def start() do
     GenServer.start(__MODULE__, [], [name: __MODULE__])
   end
+  def start(fun) when is_function(fun, 0) do
+    GenServer.start(__MODULE__, [fun: fun], [name: __MODULE__])
+  end
 
   def quit, do: cmd("quit")
   def help, do: cmd("help")
@@ -45,6 +48,9 @@ defmodule Bluetooth.Ctl do
     port = Port.open({:spawn_executable, path},
       [:binary, :use_stdio, :stderr_to_stdout, :stream]) # {:line, 2048}])
     {:ok, %__MODULE__{port: port, log: "/root/bluetoothd.log"}}
+  end
+  def init([fun: fun]) do
+    {:ok, port: fun, recording: false}
   end
 
   def handle_info({port, {:data, data_string}}, %__MODULE__{verbose: verbose} = state) when
