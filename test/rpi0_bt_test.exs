@@ -1,8 +1,10 @@
 defmodule Rpi0BtTest do
   use ExUnit.Case
-  doctest Rpi0Bt
+  doctest Bluetooth
 
-  test "the truth" do
-    assert 1 + 1 == 2
+  test "Strip Ansi Sequences" do
+    s = "\r\e[0;94m[bluetooth]\e[0m# "
+    clean = Bluetooth.Ctl.strip_ansi_sequences(s)
+    assert clean == "[bluetooth]# "
   end
 end
