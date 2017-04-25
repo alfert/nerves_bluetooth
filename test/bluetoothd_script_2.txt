@@ -1,0 +1,128 @@
+Waiting to connect to bluetoothd...[0;94m[bluetooth][0m# [K[[0;92mNEW[0m] Controller B8:27:EB:CC:05:DA BlueZ 5.43 [default]
+[0;94m[bluetooth][0m# show
+show
+Controller B8:27:EB:CC:05:DA
+	Name: BlueZ 5.43
+	Alias: BlueZ 5.43
+	Class: 0x000000
+	Powered: no
+	Discoverable: no
+	Pairable: yes
+	UUID: Generic Attribute Profile (00001801-0000-1000-8000-00805f9b34fb)
+	UUID: A/V Remote Control        (0000110e-0000-1000-8000-00805f9b34fb)
+	UUID: PnP Information           (00001200-0000-1000-8000-00805f9b34fb)
+	UUID: Generic Access Profile    (00001800-0000-1000-8000-00805f9b34fb)
+	UUID: A/V Remote Control Target (0000110c-0000-1000-8000-00805f9b34fb)
+	Modalias: usb:v1D6Bp0246d052B
+	Discovering: no
+[0;94m[bluetooth][0m# power on
+power on
+[0;94m[bluetooth][0m# [KChanging power on succeeded
+[0;94m[bluetooth][0m# [K[[0;93mCHG[0m] Controller B8:27:EB:CC:05:DA Powered: yes
+[0;94m[bluetooth][0m# scan on
+scan on
+[0;94m[bluetooth][0m# [KDiscovery started
+[0;94m[bluetooth][0m# [K[[0;93mCHG[0m] Controller B8:27:EB:CC:05:DA Discovering: yes
+[0;94m[bluetooth][0m# discoverable on
+discoverable on
+[0;94m[bluetooth][0m# [KChanging discoverable on succeeded
+[0;94m[bluetooth][0m# [K[[0;93mCHG[0m] Controller B8:27:EB:CC:05:DA Discoverable: yes
+[0;94m[bluetooth][0m# devices
+devices
+[0;94m[bluetooth][0m# [K[[0;92mNEW[0m] Device 38:CA:DA:5F:78:B0 Klaus'  iPhone
+[0;94m[bluetooth][0m# devices
+devices
+Device 38:CA:DA:5F:78:B0 Klaus'  iPhone
+[0;94m[bluetooth][0m# [K[[0;92mNEW[0m] Device AC:BC:32:95:6D:68 kals-macbook
+[0;94m[bluetooth][0m# info AC:BC:32:95:6D:68
+info AC:BC:32:95:6D:68
+Device AC:BC:32:95:6D:68
+	Name: kals-macbook
+	Alias: kals-macbook
+	Class: 0x38010c
+	Icon: computer
+	Paired: no
+	Trusted: no
+	Blocked: no
+	Connected: no
+	LegacyPairing: no
+	UUID: Serial Port               (00001101-0000-1000-8000-00805f9b34fb)
+	UUID: PnP Information           (00001200-0000-1000-8000-00805f9b34fb)
+	UUID: Headset AG                (00001112-0000-1000-8000-00805f9b34fb)
+	UUID: Handsfree Audio Gateway   (0000111f-0000-1000-8000-00805f9b34fb)
+	UUID: GN                        (00001117-0000-1000-8000-00805f9b34fb)
+	UUID: Audio Source              (0000110a-0000-1000-8000-00805f9b34fb)
+	UUID: A/V Remote Control Target (0000110c-0000-1000-8000-00805f9b34fb)
+	ManufacturerData Key: 0x004c
+	ManufacturerData Value: 0x01
+	ManufacturerData Value: 0x4d
+	ManufacturerData Value: 0x61
+	ManufacturerData Value: 0x63
+	ManufacturerData Value: 0x42
+	ManufacturerData Value: 0x6f
+	ManufacturerData Value: 0x6f
+	ManufacturerData Value: 0x6b
+	ManufacturerData Value: 0x50
+	ManufacturerData Value: 0x72
+	ManufacturerData Value: 0x6f
+	ManufacturerData Value: 0x31
+	ManufacturerData Value: 0x31
+	ManufacturerData Value: 0x2c
+	ManufacturerData Value: 0x34
+	RSSI: -48
+[0;94m[bluetooth][0m# devices
+devices
+Device 38:CA:DA:5F:78:B0 Klaus'  iPhone
+Device AC:BC:32:95:6D:68 kals-macbook
+[0;94m[bluetooth][0m# info 38:CA:DA:5F:78:B0
+info 38:CA:DA:5F:78:B0
+Device 38:CA:DA:5F:78:B0
+	Name: Klaus'  iPhone
+	Alias: Klaus'  iPhone
+	Class: 0x7a020c
+	Icon: phone
+	Paired: no
+	Trusted: no
+	Blocked: no
+	Connected: no
+	LegacyPairing: no
+	UUID: PnP Information           (00001200-0000-1000-8000-00805f9b34fb)
+	UUID: Handsfree Audio Gateway   (0000111f-0000-1000-8000-00805f9b34fb)
+	UUID: Phonebook Access Server   (0000112f-0000-1000-8000-00805f9b34fb)
+	UUID: Audio Source              (0000110a-0000-1000-8000-00805f9b34fb)
+	UUID: A/V Remote Control Target (0000110c-0000-1000-8000-00805f9b34fb)
+	UUID: Message Access Server     (00001132-0000-1000-8000-00805f9b34fb)
+	UUID: Vendor specific           (00000000-deca-fade-deca-deafdecacafe)
+	UUID: Vendor specific           (2d8d2466-e14d-451c-88bc-7301abea291a)
+	RSSI: -47
+[0;94m[bluetooth][0m# pair 38:CA:DA:5F:78:B0
+pair 38:CA:DA:5F:78:B0
+Attempting to pair with 38:CA:DA:5F:78:B0
+[0;94m[bluetooth][0m# [[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 Connected: yes
+[0;94m[Klaus'  iPhone][0m# [KFailed to pair: org.bluez.Error.AuthenticationFailed
+[0;94m[Klaus'  iPhone][0m# [[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 Connected: no
+[0;94m[bluetooth][0m# pair 38:CA:DA:5F:78:B0
+pair 38:CA:DA:5F:78:B0
+Attempting to pair with 38:CA:DA:5F:78:B0
+[0;94m[bluetooth][0m# [[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 Connected: yes
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Controller B8:27:EB:CC:05:DA Discoverable: no
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 Modalias: bluetooth:v004Cp6F02d0A30
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 UUIDs: 00000000-deca-fade-deca-deafdecacafe
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 UUIDs: 00001000-0000-1000-8000-00805f9b34fb
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 UUIDs: 0000110a-0000-1000-8000-00805f9b34fb
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 UUIDs: 0000110c-0000-1000-8000-00805f9b34fb
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 UUIDs: 0000110e-0000-1000-8000-00805f9b34fb
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 UUIDs: 00001116-0000-1000-8000-00805f9b34fb
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 UUIDs: 0000111f-0000-1000-8000-00805f9b34fb
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 UUIDs: 0000112f-0000-1000-8000-00805f9b34fb
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 UUIDs: 00001132-0000-1000-8000-00805f9b34fb
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 UUIDs: 00001200-0000-1000-8000-00805f9b34fb
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 ServicesResolved: yes
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 Paired: yes
+[0;94m[Klaus'  iPhone][0m# [KPairing successful
+[0;94m[Klaus'  iPhone][0m# [K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 ServicesResolved: no
+[0;94m[Klaus'  iPhone][0m# [[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 Connected: no
+[0;94m[bluetooth][0m# advertise on
+advertise on
+LEAdvertisingManager not found
+[0;94m[bluetooth][0m# 

@@ -1,0 +1,190 @@
+Waiting to connect to bluetoothd...[0;94m[bluetooth][0m#[K[[0;92mNEW[0m] Controller B8:27:EB:CC:05:DA BlueZ 5.43 [default]
+[0;94m[bluetooth][0m# power on
+power on
+[0;94m[bluetooth][0m#[KChanging power on succeeded
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Controller B8:27:EB:CC:05:DA Powered: yes
+[0;94m[bluetooth][0m# scan on
+scan on
+[0;94m[bluetooth][0m#[KDiscovery started
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Controller B8:27:EB:CC:05:DA Discovering: yes
+[0;94m[bluetooth][0m#[K[[0;92mNEW[0m] Device AC:BC:32:95:6D:68 kals-macbook
+[0;94m[bluetooth][0m#[K[[0;92mNEW[0m] Device 38:CA:DA:5F:78:B0 Klaus'  iPhone
+[0;94m[bluetooth][0m# help
+help
+Available commands:
+  list                       List available controllers
+  show [ctrl]                Controller information
+  select <ctrl>              Select default controller
+  devices                    List available devices
+  paired-devices             List paired devices
+  power <on/off>             Set controller power
+  pairable <on/off>          Set controller pairable mode
+  discoverable <on/off>      Set controller discoverable mode
+  agent <on/off/capability>  Enable/disable agent with given capability
+  default-agent              Set agent as the default one
+  advertise <on/off/type>    Enable/disable advertising with given type
+  set-advertise-uuids [uuid1 uuid2 ...] Set advertise uuids
+  set-advertise-service [uuid][data=[xx xx ...] Set advertise service data
+  set-advertise-manufacturer [id][data=[xx xx ...] Set advertise manufacturer data
+  set-advertise-tx-power <on/off> Enable/disable TX power to be advertised
+  set-scan-filter-uuids [uuid1 uuid2 ...] Set scan filter uuids
+  set-scan-filter-rssi [rssi] Set scan filter rssi, and clears pathloss
+  set-scan-filter-pathloss [pathloss] Set scan filter pathloss, and clears rssi
+  set-scan-filter-transport [transport] Set scan filter transport
+  set-scan-filter-clear      Clears discovery filter.
+  scan <on/off>              Scan for devices
+  info [dev]                 Device information
+  pair [dev]                 Pair with device
+  trust [dev]                Trust device
+  untrust [dev]              Untrust device
+  block [dev]                Block device
+  unblock [dev]              Unblock device
+  remove <dev>               Remove device
+  connect <dev>              Connect device
+  disconnect [dev]           Disconnect device
+  list-attributes [dev]      List attributes
+  set-alias <alias>          Set device alias
+  select-attribute <attribute> Select attribute
+  attribute-info [attribute] Select attribute
+  read                       Read attribute value
+  write <data=[xx xx ...]>   Write attribute value
+  notify <on/off>            Notify attribute value
+  register-profile <UUID ...> Register profile to connect
+  unregister-profile         Unregister profile
+  version                    Display version
+  quit                       Quit program
+[0;94m[bluetooth][0m# devices
+devices
+Device AC:BC:32:95:6D:68 kals-macbook
+Device 38:CA:DA:5F:78:B0 Klaus'  iPhone
+[0;94m[bluetooth][0m# pairable on
+pairable on
+[0;94m[bluetooth][0m#[KChanging pairable on succeeded
+[0;94m[bluetooth][0m# discoverable on
+discoverable on
+[0;94m[bluetooth][0m#[KChanging discoverable on succeeded
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Controller B8:27:EB:CC:05:DA Discoverable: yes
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 RSSI: -53
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 RSSI: -64
+[0;94m[bluetooth][0m# info 38:CA:DA:5F:78:B0
+info 38:CA:DA:5F:78:B0
+Device 38:CA:DA:5F:78:B0
+	Name: Klaus'  iPhone
+	Alias: Klaus'  iPhone
+	Class: 0x7a020c
+	Icon: phone
+	Paired: no
+	Trusted: no
+	Blocked: no
+	Connected: no
+	LegacyPairing: no
+	UUID: PnP Information           (00001200-0000-1000-8000-00805f9b34fb)
+	UUID: Handsfree Audio Gateway   (0000111f-0000-1000-8000-00805f9b34fb)
+	UUID: Phonebook Access Server   (0000112f-0000-1000-8000-00805f9b34fb)
+	UUID: Audio Source              (0000110a-0000-1000-8000-00805f9b34fb)
+	UUID: A/V Remote Control Target (0000110c-0000-1000-8000-00805f9b34fb)
+	UUID: Message Access Server     (00001132-0000-1000-8000-00805f9b34fb)
+	UUID: Vendor specific           (00000000-deca-fade-deca-deafdecacafe)
+	UUID: Vendor specific           (2d8d2466-e14d-451c-88bc-7301abea291a)
+	RSSI: -64
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 RSSI: -52
+[0;94m[bluetooth][0m# devices
+devices
+Device AC:BC:32:95:6D:68 kals-macbook
+Device 38:CA:DA:5F:78:B0 Klaus'  iPhone
+[0;94m[bluetooth][0m# info AB:BC:32:95:6D:68
+info AB:BC:32:95:6D:68
+Device AB:BC:32:95:6D:68 not available
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 RSSI: -65
+[0;94m[bluetooth][0m# devices
+devices
+Device AC:BC:32:95:6D:68 kals-macbook
+Device 38:CA:DA:5F:78:B0 Klaus'  iPhone
+[0;94m[bluetooth][0m# info AB:BC:32:95:6D:68
+info AB:BC:32:95:6D:68
+Device AB:BC:32:95:6D:68 not available
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Controller B8:27:EB:CC:05:DA Discoverable: no
+[0;94m[bluetooth][0m# discoverable on
+discoverable on
+[0;94m[bluetooth][0m#[KChanging discoverable on succeeded
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Controller B8:27:EB:CC:05:DA Discoverable: yes
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 RSSI: -53
+[0;94m[bluetooth][0m# info AB:BC:32:95:6D:68
+info AB:BC:32:95:6D:68
+Device AB:BC:32:95:6D:68 not available
+[0;94m[bluetooth][0m# info 38:CA:DA:5F:78:B0
+info 38:CA:DA:5F:78:B0
+Device 38:CA:DA:5F:78:B0
+	Name: Klaus'  iPhone
+	Alias: Klaus'  iPhone
+	Class: 0x7a020c
+	Icon: phone
+	Paired: no
+	Trusted: no
+	Blocked: no
+	Connected: no
+	LegacyPairing: no
+	UUID: PnP Information           (00001200-0000-1000-8000-00805f9b34fb)
+	UUID: Handsfree Audio Gateway   (0000111f-0000-1000-8000-00805f9b34fb)
+	UUID: Phonebook Access Server   (0000112f-0000-1000-8000-00805f9b34fb)
+	UUID: Audio Source              (0000110a-0000-1000-8000-00805f9b34fb)
+	UUID: A/V Remote Control Target (0000110c-0000-1000-8000-00805f9b34fb)
+	UUID: Message Access Server     (00001132-0000-1000-8000-00805f9b34fb)
+	UUID: Vendor specific           (00000000-deca-fade-deca-deafdecacafe)
+	UUID: Vendor specific           (2d8d2466-e14d-451c-88bc-7301abea291a)
+	RSSI: -53
+[0;94m[bluetooth][0m# help
+help
+Available commands:
+  list                       List available controllers
+  show [ctrl]                Controller information
+  select <ctrl>              Select default controller
+  devices                    List available devices
+  paired-devices             List paired devices
+  power <on/off>             Set controller power
+  pairable <on/off>          Set controller pairable mode
+  discoverable <on/off>      Set controller discoverable mode
+  agent <on/off/capability>  Enable/disable agent with given capability
+  default-agent              Set agent as the default one
+  advertise <on/off/type>    Enable/disable advertising with given type
+  set-advertise-uuids [uuid1 uuid2 ...] Set advertise uuids
+  set-advertise-service [uuid][data=[xx xx ...] Set advertise service data
+  set-advertise-manufacturer [id][data=[xx xx ...] Set advertise manufacturer data
+  set-advertise-tx-power <on/off> Enable/disable TX power to be advertised
+  set-scan-filter-uuids [uuid1 uuid2 ...] Set scan filter uuids
+  set-scan-filter-rssi [rssi] Set scan filter rssi, and clears pathloss
+  set-scan-filter-pathloss [pathloss] Set scan filter pathloss, and clears rssi
+  set-scan-filter-transport [transport] Set scan filter transport
+  set-scan-filter-clear      Clears discovery filter.
+  scan <on/off>              Scan for devices
+  info [dev]                 Device information
+  pair [dev]                 Pair with device
+  trust [dev]                Trust device
+  untrust [dev]              Untrust device
+  block [dev]                Block device
+  unblock [dev]              Unblock device
+  remove <dev>               Remove device
+  connect <dev>              Connect device
+  disconnect [dev]           Disconnect device
+  list-attributes [dev]      List attributes
+  set-alias <alias>          Set device alias
+  select-attribute <attribute> Select attribute
+  attribute-info [attribute] Select attribute
+  read                       Read attribute value
+  write <data=[xx xx ...]>   Write attribute value
+  notify <on/off>            Notify attribute value
+  register-profile <UUID ...> Register profile to connect
+  unregister-profile         Unregister profile
+  version                    Display version
+  quit                       Quit program
+[0;94m[bluetooth][0m#[K[[0;93mCHG[0m] Device 38:CA:DA:5F:78:B0 RSSI: -61
+[0;94m[bluetooth][0m# agent on
+agent on
+[0;94m[bluetooth][0m#[KAgent registered
+[0;94m[bluetooth][0m# notify on
+notify on
+No attribute selected
+[0;94m[bluetooth][0m# list
+list
+Controller B8:27:EB:CC:05:DA BlueZ 5.43 [default]
+[0;94m[bluetooth][0m#
