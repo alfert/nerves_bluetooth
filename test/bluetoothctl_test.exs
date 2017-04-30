@@ -11,7 +11,7 @@ defmodule Bluetooth.Test.Ctl do
       ref = Process.monitor(controller)
       Process.exit(controller, :kill)
       receive do
-        {:DOWN, ^ref, _, ^controller, _} -> :ok
+        {:DOWN, ^ref, :process, ^controller, _} -> :ok
       end
     end)
     {:ok, %{controller: controller}}
@@ -73,7 +73,7 @@ defmodule Bluetooth.Test.Ctl do
     assert {:change, {:controller, "B8:27:EB:CC:05:DA", powered: true}} == power_on
   end
 
-  test "manage device state from script 1",  %{controller: controller} do
+  test "manage some device state from script 1 in BLE",  %{controller: controller} do
     script = "test/bluetoothd_script_1.txt"
     |> script_as_list()
     |> parse_and_filter_commands()
@@ -90,6 +90,22 @@ defmodule Bluetooth.Test.Ctl do
 
     send(ble, power_on)
     assert [%GenBle.Controller{id: c_id, name: name, powered: true}] = GenBle.controllers(ble)
+  end
 
+  test "events are stored until the first BLE consummer appears",  %{controller: controller}  do
+    script = script_as_list("test/bluetoothd_script_1.txt")
+    commands = parse_and_filter_commands(script)
+    bluez_start = Enum.at(commands, 0)
+    {:new, {:controller, c_id, name}} = bluez_start
+    # send bluez startup messages to controller
+    script
+    |> Enum.take(5)
+    |> Enum.each(fn input -> send(controller, {:port, {:data, input}}) end)
+
+    # start BLE
+    {:ok, ble} = GenBle.start_link(controller)
+
+    # get Infos about controllers
+    assert [%GenBle.Controller{id: ^c_id, name: ^name, powered: true}] = GenBle.controllers(ble)
   end
 end

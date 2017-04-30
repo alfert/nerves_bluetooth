@@ -47,11 +47,17 @@ defmodule Bluetooth.Ctl do
     GenServer.call(__MODULE__, {:cmd, cmd})
   end
 
+  @doc """
+  Attaches a BLE manager to the bluetooth control process and
+  sends all already parsed event messages from bluez to the
+  BLE such that both states become identical.
+  """
   def attach(_ctl, ble) do
     GenServer.call(__MODULE__, {:attach, ble})
   end
 
-  defstruct [port: nil, verbose: true, recording: true, log: nil, ble: nil]
+  defstruct [port: nil, verbose: true, recording: true, log: nil, ble: nil,
+    event_queue: :queue.new()]
 
   def init([]) do
     path = System.find_executable("bluetoothctl")
@@ -63,18 +69,27 @@ defmodule Bluetooth.Ctl do
     {:ok,  %__MODULE__{port: fun, recording: false}}
   end
 
-  def handle_info({port, {:data, data_string}}, %__MODULE__{verbose: verbose} = state) when
+  def handle_info({port, {:data, data_string}}, state = %__MODULE__{verbose: verbose, event_queue: q}) when
           is_binary(data_string) do
     if verbose, do: Logger.info("BluetoothCtl: #{inspect data_string}")
-    data_string
+
+    new_q = data_string
     |> log(state.log)
     |> strip_ansi_sequences()
     |> String.splitter("\n")
     |> Enum.map(&parse/1)
     |> Enum.filter(&is_parsed_event?/1)
-    |> Enum.each(fn p -> Logger.info("Parsed: #{inspect p}") end)
-    |> Enum.each(fn p -> if (state.ble != nil), do: send(state.ble, p) end)
-    {:noreply, state}
+    |> Enum.map(fn p ->
+      Logger.info("Parsed: #{inspect p}")
+      p
+    end)
+    |> Enum.map(fn p ->
+      if (state.ble != nil), do: send(state.ble, p)
+      p
+    end)
+    |> Enum.reduce(q, fn event, ev_q ->
+      if (state.ble == nil), do: :queue.in(event, ev_q), else: ev_q end)
+    {:noreply, struct(state, [event_queue: new_q])}
   end
   def handle_info({port, :closed}, %__MODULE__{verbose: verbose} = state) do
     if verbose, do: Logger.info("BluetoothCtl: closed")
@@ -91,10 +106,10 @@ defmodule Bluetooth.Ctl do
     |> reply(state)
   end
   def handle_call({:attach, ble}, _from, state) do
-    new_state = %__MODULE__{state | ble: ble}
+    send(ble, {:events, :queue.to_list(state.event_queue)})
+    new_state = %__MODULE__{state | ble: ble, event_queue: :queue.new()}
     reply(:ok, new_state)
   end
-
 
   defp reply(ret_value, state) do
     {:reply, ret_value, state}
@@ -104,6 +119,10 @@ defmodule Bluetooth.Ctl do
   Write the message `msg` to the file with name `filename` and
   returns `msg`.
   """
+  def log(msg, nil) do
+    Logger.debug "Ignoring log recording: #{msg}"
+    msg
+   end
   def log(msg, filename) do
     :ok = File.write(filename, msg, [:append, :sync, :utf8])
     msg

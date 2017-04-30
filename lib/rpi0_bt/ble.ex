@@ -35,6 +35,15 @@ defmodule Bluetooth.GenBle do
     |> reply(state)
   end
 
+  def handle_info({:events, events}, state) when is_list(events) do
+    # iterate through all events to calculate the state
+    Logger.debug "Got a sequence of events: #{inspect events}"
+    final_state = Enum.reduce(events, state, fn ev, s ->
+      {:noreply, s_new} = handle_info(ev, s)
+      s_new
+    end)
+    {:noreply, final_state}
+  end
   def handle_info({:new, {:controller, id, name}}, state = %__MODULE__{controllers: cs}) do
     c = %Controller{id: id, name: name}
     {:noreply, %__MODULE__{state | controllers: Map.put(cs, id, c)}}
