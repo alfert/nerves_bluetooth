@@ -5,7 +5,7 @@ defmodule Bluetooth.GenBle do
   require Logger
 
   def start_link(driver) when is_pid(driver) do
-    GenServer.start_link(__MODULE__, [driver])
+    GenServer.start_link(__MODULE__, [driver], [debug: [:log]])
   end
 
   def controllers(ble) do
@@ -18,8 +18,8 @@ defmodule Bluetooth.GenBle do
     @moduledoc """
     Data structure describing a controller and its state
     """
-    @type t :: %__MODULE__{id: String.t, name: String.t, powered: bool,
-      discovering: bool, discoverable: bool}
+    @type t :: %__MODULE__{id: String.t, name: String.t, powered: boolean,
+      discovering: boolean, discoverable: boolean}
     defstruct [id: "", name: "", powered: false, discovering: false,
       discoverable: false]
   end

@@ -14,13 +14,13 @@ defmodule Bluetooth.Ctl do
     power :on
   end
   def start_link() do
-    GenServer.start_link(__MODULE__, [], [name: __MODULE__])
+    GenServer.start_link(__MODULE__, [], [name: __MODULE__, debug: [:log]])
   end
   def start() do
-    GenServer.start(__MODULE__, [], [name: __MODULE__])
+    GenServer.start(__MODULE__, [], [name: __MODULE__, debug: [:log]])
   end
   def start(fun) when is_function(fun, 0) do
-    GenServer.start(__MODULE__, [fun: fun], [name: __MODULE__])
+    GenServer.start(__MODULE__, [fun: fun], [name: __MODULE__, debug: [:log]])
   end
 
   def quit, do: cmd("quit")
