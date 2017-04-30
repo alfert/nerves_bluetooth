@@ -5,8 +5,14 @@ defmodule Bluetooth.Ctl do
   """
   use GenServer
   require Bluetooth.Ctl.Macros
+  require Logger
   alias Bluetooth.Ctl.Macros
+  alias Bluetooth.GenBle
 
+  def start_link(:power_on) do
+    start_link()
+    power :on
+  end
   def start_link() do
     GenServer.start_link(__MODULE__, [], [name: __MODULE__])
   end
@@ -41,7 +47,11 @@ defmodule Bluetooth.Ctl do
     GenServer.call(__MODULE__, {:cmd, cmd})
   end
 
-  defstruct [port: nil, verbose: true, recording: true, log: nil]
+  def attach(_ctl, ble) do
+    GenServer.call(__MODULE__, {:attach, ble})
+  end
+
+  defstruct [port: nil, verbose: true, recording: true, log: nil, ble: nil]
 
   def init([]) do
     path = System.find_executable("bluetoothctl")
@@ -50,26 +60,28 @@ defmodule Bluetooth.Ctl do
     {:ok, %__MODULE__{port: port, log: "/root/bluetoothd.log"}}
   end
   def init([fun: fun]) do
-    {:ok, port: fun, recording: false}
+    {:ok,  %__MODULE__{port: fun, recording: false}}
   end
 
   def handle_info({port, {:data, data_string}}, %__MODULE__{verbose: verbose} = state) when
           is_binary(data_string) do
-    if verbose, do: IO.puts("BluetoothCtl: #{inspect data_string}")
+    if verbose, do: Logger.info("BluetoothCtl: #{inspect data_string}")
     data_string
     |> log(state.log)
     |> strip_ansi_sequences()
     |> String.splitter("\n")
     |> Enum.map(&parse/1)
-    |> Enum.each(fn p -> IO.puts("Parsed: #{inspect p}") end)
+    |> Enum.filter(&is_parsed_event?/1)
+    |> Enum.each(fn p -> Logger.info("Parsed: #{inspect p}") end)
+    |> Enum.each(fn p -> if (state.ble != nil), do: send(state.ble, p) end)
     {:noreply, state}
   end
   def handle_info({port, :closed}, %__MODULE__{verbose: verbose} = state) do
-    if verbose, do: IO.puts("BluetoothCtl: closed")
+    if verbose, do: Logger.info("BluetoothCtl: closed")
     {:stop, :normal, state}
   end
   def handle_info({port, {:data, data_string}}, %__MODULE__{verbose: verbose} = state) do
-    if verbose, do: IO.puts("BluetoothCtl: #{inspect data_string}")
+    if verbose, do: Logger.info("BluetoothCtl: #{inspect data_string}")
     {:noreply, state}
   end
 
@@ -78,6 +90,11 @@ defmodule Bluetooth.Ctl do
     Port.command(port, data)
     |> reply(state)
   end
+  def handle_call({:attach, ble}, _from, state) do
+    new_state = %__MODULE__{state | ble: ble}
+    reply(:ok, new_state)
+  end
+
 
   defp reply(ret_value, state) do
     {:reply, ret_value, state}
@@ -103,15 +120,36 @@ defmodule Bluetooth.Ctl do
     Regex.replace(regexp, s, "")
   end
 
-  # def parse("[bluetooth]# \r" <> event), do: parse_event(event)
+  def is_parsed_event?({:new, _}), do: true
+  def is_parsed_event?({:change, _}), do: true
+  def is_parsed_event?(_), do: false
+
   def parse("[NEW] " <> new_event), do: {:new, parse_device(new_event)}
   def parse("[CHG] " <> chg_event), do: {:change, parse_device(chg_event)}
-  def parse(output), do: {output}
+  def parse(output) do
+    case String.split(output, "[bluetooth]#", parts: 2) do
+      [_prefix, cmd] -> parse(cmd)
+      [_] -> {output}
+    end
+  end
 
   def parse_device(<<"Device ", uuid :: binary-size(17), " ", rest::binary>>) do
-    {:device, uuid, rest}
+    {:device, uuid, device_state(rest)}
   end
   def parse_device(<<"Controller ", uuid :: binary-size(17), " ", rest::binary>>) do
-    {:controller, uuid, rest}
+    {:controller, uuid, controller_state(rest)}
   end
+
+  def controller_state("Powered: " <> "yes"), do: [powered: true]
+  def controller_state("Powered: " <> "no"), do: [powered: false]
+  def controller_state("Discovering: " <> "yes"), do: [discovering: true]
+  def controller_state("Discovering: " <> "no"), do: [discovering: false]
+  def controller_state("Discoverable: " <> "yes"), do: [discoverable: true]
+  def controller_state("Discoverable: " <> "no"), do: [discoverable: false]
+  def controller_state(any_state), do: any_state
+
+  def device_state("RSSI: " <> number), do: [rssi: Integer.parse(number, 10)]
+  def device_state(any_state), do: any_state
+
+
 end
