@@ -51,7 +51,10 @@ defmodule Rpi0Bt.Mixfile do
   def deps do
     # [{:nerves, "~> 0.5.0", runtime: false}] ++
     [{:nerves, "~> 0.5.0", runtime: false, path: "../nerves-sources/nerves",
-        override: true}] ++
+        override: true},
+     {:uuid, "~> 1.1"},
+     {:logger_file_backend, "~> 0.0.9"}
+    ] ++
     deps(@target)
   end
 
