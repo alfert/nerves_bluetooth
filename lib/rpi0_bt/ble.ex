@@ -12,6 +12,10 @@ defmodule Bluetooth.GenBle do
     GenServer.call(ble, :controllers)
   end
 
+  def devices(ble) do
+    GenServer.call(ble, :devices)
+  end
+
   defstruct [:driver, :monitor_ref, controllers: %{}, devices: %{}]
 
   defmodule Controller do
@@ -40,6 +44,10 @@ defmodule Bluetooth.GenBle do
 
   def handle_call(:controllers, _from, state = %__MODULE__{controllers: cs}) do
     Map.values(cs)
+    |> reply(state)
+  end
+  def handle_call(:devices, _from, state = %__MODULE__{devices: ds}) do
+    Map.values(ds)
     |> reply(state)
   end
 
