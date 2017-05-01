@@ -1,6 +1,7 @@
 defmodule Bluetooth.Test.Ctl do
 
   use ExUnit.Case
+  @moduletag capture_log: false
 
   alias Bluetooth.Ctl
   alias Bluetooth.GenBle
@@ -92,7 +93,7 @@ defmodule Bluetooth.Test.Ctl do
     assert [%GenBle.Controller{id: c_id, name: name, powered: true}] = GenBle.controllers(ble)
   end
 
-  test "events are stored until the first BLE consummer appears",  %{controller: controller}  do
+  test "events are stored until the first BLE consummer appears",  %{controller: controller} do
     script = script_as_list("test/bluetoothd_script_1.txt")
     commands = parse_and_filter_commands(script)
     bluez_start = Enum.at(commands, 0)
@@ -103,9 +104,32 @@ defmodule Bluetooth.Test.Ctl do
     |> Enum.each(fn input -> send(controller, {:port, {:data, input}}) end)
 
     # start BLE
-    {:ok, ble} = GenBle.start_link(controller)
+    {:ok, ble} = GenBle.start_link() # controller)
 
     # get Infos about controllers
+    assert [%GenBle.Controller{id: ^c_id, name: ^name, powered: true}] = GenBle.controllers(ble)
+  end
+
+  test "Process the entire script",  %{controller: controller} do
+    script = script_as_list("test/bluetoothd_script_1.txt")
+    commands = parse_and_filter_commands(script)
+    bluez_start = Enum.at(commands, 0)
+    {:new, {:controller, c_id, name}} = bluez_start
+    # start BLE
+    {:ok, ble} = GenBle.start_link(controller)
+
+    # We use the commands list to prevent synchronization errors,
+    # which are still here since sending events is way faster than
+    # reacting to them, so it could be that our assert reveals wrong data
+    # because we don't wait long enough. This happens immediately
+    # if we send the script to the controller, since parsing and
+    # sending them to ble takes so much time, that nothing on ble happens
+    # before we asking the assertion.
+
+    commands
+    |> Enum.each(fn input -> send(ble, input) end)
+
+    # get Info about controllers
     assert [%GenBle.Controller{id: ^c_id, name: ^name, powered: true}] = GenBle.controllers(ble)
   end
 end
