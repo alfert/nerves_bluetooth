@@ -16,6 +16,17 @@ defmodule Bluetooth.GenBle do
     GenServer.call(ble, :devices)
   end
 
+  @doc """
+  Creates an iBeacon advertisement with `major` and `minor` values
+  """
+  def iBeacon(uuid \\ "b2a21ef4-2e71-11e7-b18b-acbc32956d67", major, minor) do
+    Driver.cmd("set-advertise-uuids #{uuid}")
+    Driver.cmd("set-advertise-manufacturer 76") # 76 = 0x004c Apple
+    Driver.cmd("set-advertise-service FF")
+    Driver.cmd("set-advertise-tx-power on")
+    Driver.cmd("advertise on")
+  end
+
   defstruct [:driver, :monitor_ref, controllers: %{}, devices: %{}]
 
   defmodule Controller do
