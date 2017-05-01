@@ -4,7 +4,7 @@ defmodule Bluetooth.GenBle do
   alias Bluetooth.Ctl, as: Driver
   require Logger
 
-  def start_link(driver) when is_pid(driver) do
+  def start_link(driver \\ GenServer.whereis(Driver)) when is_pid(driver) do
     GenServer.start_link(__MODULE__, [driver], [debug: [:log]])
   end
 
