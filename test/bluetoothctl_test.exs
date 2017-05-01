@@ -1,7 +1,7 @@
 defmodule Bluetooth.Test.Ctl do
 
   use ExUnit.Case
-  @moduletag capture_log: false
+  @moduletag capture_log: true
 
   alias Bluetooth.Ctl
   alias Bluetooth.GenBle
@@ -131,5 +131,10 @@ defmodule Bluetooth.Test.Ctl do
 
     # get Info about controllers
     assert [%GenBle.Controller{id: ^c_id, name: ^name, powered: true}] = GenBle.controllers(ble)
+    # get Info about devices
+    devices = GenBle.devices(ble)
+    assert length(devices) == 2
+    dev = Enum.find(devices, fn %GenBle.Device{id: id} -> id == "38:CA:DA:5F:78:B0" end)
+    assert %GenBle.Device{id: "38:CA:DA:5F:78:B0", rssi: -61} = dev
   end
 end
