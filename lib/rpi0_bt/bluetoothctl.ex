@@ -10,8 +10,9 @@ defmodule Bluetooth.Ctl do
   alias Bluetooth.GenBle
 
   def start_link(:power_on) do
-    start_link()
-    power :on
+    return_val = start_link()
+    true = power :on
+    return_val
   end
   def start_link() do
     GenServer.start_link(__MODULE__, [], [name: __MODULE__, debug: [:log]])
