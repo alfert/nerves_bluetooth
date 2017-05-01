@@ -168,7 +168,7 @@ defmodule Bluetooth.Ctl do
   def controller_state("Discoverable: " <> "no"), do: [discoverable: false]
   def controller_state(any_state), do: any_state
 
-  def device_state("RSSI: " <> number), do: [rssi: Integer.parse(number, 10)]
+  def device_state("RSSI: " <> number), do: [rssi: String.to_integer(number, 10)]
   def device_state(any_state), do: any_state
 
 
