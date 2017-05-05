@@ -1,22 +1,43 @@
 #ifndef HCI_MODULE
 #define HCI_MODULE
 
+
+#define bool char
+#define true 1
+#define false 0
+
 #ifdef DEBUG
-
 #define LOG(fmt, ...) flog(fmt, __VA_ARGS__)
-
 #else
-
 #define LOG(fmt, ...)
-
 #endif
 
 /* Logging function, not part of the API */
 void flog(const char *fmt, ...);
 
-int foo(int x);
+/* hci_init() 
+ * Opens the HCI Socket for the Bluetooth Controller
+ * returns: 0 if no problem occurs
+ */
+int hci_init();
 
-int bar(int y);
+/* hci_close() 
+ * Closes the HCI Socket for the Bluetooth Controller
+ * returns: 0 if no problem occurs
+ */
+int hci_close();
+
+/* hci_dev_id_for()
+ * Resolves the devices ID, depending on the device state.
+ */
+int hdci_dev_id_for(int* p_dev_id, bool is_up)   
+
+/*
+bool hci_is_dev_up()
+
+
+/* Testing function, from the tutorial */
+int foo(int x);
 
 
 #endif

@@ -19,6 +19,11 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
+// we do not include hci_lib.h, because the functions defined there are
+// implemented in Elixir instead.
+
 #include "hci_module.h"
 
 #ifdef DEBUG
@@ -38,99 +43,76 @@ void flog(const char *fmt, ...)  {
 
 #endif
 
-#define BTPROTO_L2CAP 0
-#define BTPROTO_HCI   1
 
-#define SOL_HCI       0
-#define HCI_FILTER    2
-
-#define HCIGETDEVLIST _IOR('H', 210, int)
-#define HCIGETDEVINFO _IOR('H', 211, int)
-
-#define HCI_CHANNEL_RAW     0
-#define HCI_CHANNEL_USER    1
-#define HCI_CHANNEL_CONTROL 3
-
-#define HCI_DEV_NONE  0xffff
-
-#define HCI_MAX_DEV 16
-
+// TODO: Where does ATT_CID come from?
 #define ATT_CID 4
-
-
-struct sockaddr_hci {
-  sa_family_t     hci_family;
-  unsigned short  hci_dev;
-  unsigned short  hci_channel;
-};
-
-struct hci_dev_req {
-  uint16_t dev_id;
-  uint32_t dev_opt;
-};
-
-struct hci_dev_list_req {
-  uint16_t dev_num;
-  struct hci_dev_req dev_req[0];
-};
-
-typedef struct {
-  uint8_t b[6];
-} __attribute__((packed)) bdaddr_t;
-
-struct hci_dev_info {
-  uint16_t dev_id;
-  char     name[8];
-
-  bdaddr_t bdaddr;
-
-  uint32_t flags;
-  uint8_t  type;
-
-  uint8_t  features[8];
-
-  uint32_t pkt_type;
-  uint32_t link_policy;
-  uint32_t link_mode;
-
-  uint16_t acl_mtu;
-  uint16_t acl_pkts;
-  uint16_t sco_mtu;
-  uint16_t sco_pkts;
-
-  // hci_dev_stats
-  uint32_t err_rx;
-  uint32_t err_tx;
-  uint32_t cmd_tx;
-  uint32_t evt_rx;
-  uint32_t acl_tx;
-  uint32_t acl_rx;
-  uint32_t sco_tx;
-  uint32_t sco_rx;
-  uint32_t byte_rx;
-  uint32_t byte_tx;
-};
-
-struct sockaddr_l2 {
-  sa_family_t    l2_family;
-  unsigned short l2_psm;
-  bdaddr_t       l2_bdaddr;
-  unsigned short l2_cid;
-  uint8_t        l2_bdaddr_type;
-};
 
 /* =========================================*/
 
 int _mode;
-int _socket;
+int _socket = -1;
 int _devId;
 
 /* =========================================*/
 
 
-int init_hci() {
+int hci_init() {
   _socket = socket(AF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC, BTPROTO_HCI);
+  return _socket != -1;
+}
 
+int hci_close() {
+  close(_socket);
+  _socket = -1;
+  return 0;
+}
+
+ bool hci_is_dev_up() {
+  struct hci_dev_info di;
+  bool is_up = false;
+
+  memset(&di, 0x00, sizeof(di));
+  di.dev_id = _devId;
+
+  if (ioctl(_socket, HCIGETDEVINFO, (void *)&di) > -1) {
+    is_up = (di.flags & (1 << HCI_UP)) != 0;
+  }
+
+  return is_up;
+}
+
+int hci_dev_id_for(int* p_dev_id, bool is_up) {
+  int dev_id = 0; // default
+
+  if (p_dev_id == NULL) {
+    struct hci_dev_list_req *dl;
+    struct hci_dev_req *dr;
+
+    dl = (struct hci_dev_list_req*)calloc(HCI_MAX_DEV * sizeof(*dr) + sizeof(*dl), 1);
+    dr = dl->dev_req;
+
+    dl->dev_num = HCI_MAX_DEV;
+
+    if (ioctl(_socket, HCIGETDEVLIST, dl) > -1) {
+      for (int i = 0; i < dl->dev_num; i++, dr++) {
+        bool dev_up = dr->dev_opt & (1 << HCI_UP);
+        bool match = is_up ? dev_up : !dev_up;
+
+        if (match) {
+          // choose the first device that is match
+          // later on, it would be good to also HCIGETDEVINFO and check the HCI_RAW flag
+          dev_id = dr->dev_id;
+          break;
+        }
+      }
+    }
+
+    free(dl);
+  } else {
+    dev_id = *p_dev_id;
+  }
+
+  return dev_id;
 }
 
 
