@@ -15,6 +15,7 @@ defmodule Rpi0Bt.Mixfile do
      archives: [nerves_bootstrap: "~> 0.3.0"],
      compilers: [:elixir_make] ++ Mix.compilers,
      make_clean: ["clean"],
+     make_env: %{"ERL_INTERFACE" => :code.lib_dir(:erl_interface) |> :binary.list_to_bin()},
      deps_path: "deps/#{@target}",
      build_path: "_build/#{@target}",
      build_embedded: Mix.env == :prod,
@@ -51,12 +52,13 @@ defmodule Rpi0Bt.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   def deps do
-    # [{:nerves, "~> 0.5.0", runtime: false}] ++
-    [{:nerves, "~> 0.5.0", runtime: false, path: "../nerves-sources/nerves",
-        override: true},
+    [{:nerves, "~> 0.5.0", runtime: false}] ++
+     [
+      # {:nerves, "~> 0.5.0", runtime: false, path: "../nerves-sources/nerves",
+      #     override: true},
      {:elixir_make, "~> 0.3", runtime: false},
-     {:uuid, "~> 1.1"},
-     {:logger_file_backend, "~> 0.0.9"}
+    #  {:logger_file_backend, "~> 0.0.9"},
+     {:uuid, "~> 1.1"}
     ] ++
     deps(@target)
   end

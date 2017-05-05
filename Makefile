@@ -8,18 +8,19 @@
 # SUDO_ASKPASS  path to ssh-askpass when modifying ownership of net_basic
 # SUDO          path to SUDO. If you don't want the privileged parts to run, set to "true"
 #
-# ERL_HOME      path to Erlang installation
+# ERL_INTERFACE  path to Erlang Interface application directory inside OTP_ROOT
 # ERL_H         path to Erlang C Header files
 # ERL_LIB       path to Erlang C libs
-ERL_HOME = /usr/local/lib/erlang
-ERL_H = $(ERL_HOME)/lib/erl_interface-3.9.1/include
-ERL_LIB = -L $(ERL_HOME)/lib/erl_interface-3.9.1/lib -lerl_interface -lei
+
+ERL_H = $(ERL_INTERFACE)/include
+ERL_LIB = -L $(ERL_INTERFACE)/lib -lerl_interface -lei
 
 HCI_DEFINES = -DCONFIG_CTRL_IFACE -DCONFIG_CTRL_IFACE_UNIX
 
 # Linux: LDFLAGS += -lrt $(ERL_LIB)
 LDFLAGS += $(ERL_LIB)
-CFLAGS ?= -O2 -Wall -Wextra -Wno-unused-parameter -I $(ERL_H)
+LDFLAGS += -lrt -pthread
+CFLAGS ?= -O2 -Wall -Wextra -Wno-unused-parameter -pthread -I $(ERL_H)
 CC ?= $(CROSSCOMPILE)gcc
 
 # If not cross-compiling, then run sudo by default
