@@ -17,7 +17,7 @@
 
 #include "hci_module.h"
 
-
+#ifdef DEBUG
 void vflog(const char *fmt, va_list args)  {
   FILE *f = fopen("./hci_ex.log", "a+");
   vfprintf(f, fmt, args);
@@ -30,6 +30,9 @@ void flog(const char *fmt, ...)  {
   vflog(fmt, args);
   va_end(args);
 }
+#else
+
+#endif
 
 int foo(int x) {
   return x+1;

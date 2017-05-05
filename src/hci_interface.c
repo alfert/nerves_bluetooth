@@ -32,11 +32,11 @@ int read_cmd(byte *buf) {
   int read_count = -1;
   // read 2 bytes for package length
   if ((read_count = read_exact(buf, 2)) != 2) {
-    log("did not get 2 bytes from the buffer");
+    LOG("did not get 2 bytes from the buffer");
     return(-1);
   }
   len = (buf[0] << 8) | buf[1];
-  flog("Length: %d\n", len);
+  LOG("Length: %d\n", len);
   // read exactly that many bytes as the packet size is.
   return read_exact(buf, len);
 }

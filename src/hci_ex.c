@@ -23,15 +23,15 @@ int main() {
   byte buf[100];
   // long allocated, freed;
 
-  log("\n>>>>>>>>>>>>>>>\n");
+  LOG("\n>>>>>>>>>>>>>>>\n");
   // Initialize the Erl_Interface library
   erl_init(NULL, 0);
 
-  log("Starting up the hci_ex");
+  LOG("Starting up the hci_ex");
 
   int read_count = -1;
   while ((read_count = read_cmd(buf)) > 0) {
-    flog("read command successful, read %d bytes\n", read_count);
+    LOG("read command successful, read %d bytes\n", read_count);
     /***************************
     * Decode the protocol between Elixir and C
     ****************************/
@@ -41,14 +41,14 @@ int main() {
     argp = erl_element(3, tuplep);
     int i = ERL_INT_VALUE(argp);
 
-    flog("Got a call to do with param: %d\n", i);
+    LOG("Got a call to do with param: %d\n", i);
 
     if (strncmp(ERL_ATOM_PTR(fnp), "foo", 3) == 0) {
       res = foo(i);
     } else if (strncmp(ERL_ATOM_PTR(fnp), "bar", 3) == 0) {
       res = bar(i);
     }
-    log("Assemble result");
+    LOG("Assemble result");
     intp = erl_mk_int(res);
 
     // construct the resulting pair of reference and value
@@ -56,12 +56,12 @@ int main() {
     resultp[1] = intp;
     result_pair = erl_mk_tuple(resultp, 2);
 
-    flog("Encode result of %d\n", res);
+    LOG("Encode result of %d\n", res);
     erl_encode(result_pair, buf);
-    log("Write result");
+    LOG("Write result");
     write_cmd(buf, erl_term_len(result_pair));
 
-    log("Free erlang term variables");
+    LOG("Free erlang term variables");
     erl_free_compound(tuplep);
     erl_free_term(fnp);
     erl_free_term(argp);
@@ -69,6 +69,6 @@ int main() {
     erl_free_compound(result_pair);
     erl_free_term(refp);
   }
-  flog("could only read %d bytes\n", read_count);
-  log("Stopping hci_ex");
+  LOG("could only read %d bytes\n", read_count);
+  LOG("Stopping hci_ex");
 }

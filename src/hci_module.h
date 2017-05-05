@@ -1,9 +1,18 @@
 #ifndef HCI_MODULE
 #define HCI_MODULE
 
-#define log(s) flog("%s\n", s)
-// void flog(char *s);
-void flog(const char *s, ...);
+#ifdef DEBUG
+
+#define LOG(fmt, ...) flog(fmt, __VA_ARGS__)
+
+#else
+
+#define LOG(fmt, ...)
+
+#endif
+
+/* Logging function, not part of the API */
+void flog(const char *fmt, ...);
 
 int foo(int x);
 
