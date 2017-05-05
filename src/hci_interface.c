@@ -1,3 +1,11 @@
+/**
+ * Function for reading and writing data from stdin and stdout
+ * to communicate with the Erlang VM.
+ *
+ * The functions are taken from the Erlang Interoperability Tutorial Guide.
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

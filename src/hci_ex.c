@@ -1,14 +1,6 @@
 /* HCI_EX port main program, based on ei.h for using erlang binary terms */
 
 #include "erl_interface.h"
-// #include "ei.h"
-/********
-*
-* TODO:
-* - encoding of commands still to be done
-* - elixir side is missing
-*
-*********/
 
 #include <stdio.h>
 #include <stdlib.h>

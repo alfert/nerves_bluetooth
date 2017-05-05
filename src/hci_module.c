@@ -1,3 +1,13 @@
+/**
+ * This module contains the functions to access the HCI devices
+ * on the Kernel level.
+ *
+ * The functions originate as a port of Bleno's and Noble's
+ * node-bluetooth-hci-socket project, providing access from node.js
+ * to Bluetooth via HCI sockets.
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
