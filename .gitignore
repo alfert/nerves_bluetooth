@@ -11,3 +11,4 @@
 # Generate on crash by the VM
 erl_crash.dump
 *.o
+/priv/hci_ex
