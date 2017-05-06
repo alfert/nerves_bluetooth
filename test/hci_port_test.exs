@@ -2,20 +2,41 @@ defmodule Bluetooth.Test.HCIPort do
   use ExUnit.Case
 
   alias Bluetooth.HCI
+  require Logger
 
-  test "call foo" do
+  setup do
     {:ok, hci} = HCI.start_link()
+    on_exit(:kill_HCI, fn -> 
+      ref = Process.monitor(hci)
+      Process.exit(hci, :kill)
+      receive do
+        {:DOWN, ^ref, :process, ^hci, _} -> 
+          Logger.debug("Ok, HCI #{inspect hci} is down")
+          :ok
+      end
+    end)
+    {:ok, %{hci: hci}}
+  end
+
+  test "get some information about controller", %{hci: hci} do
+    assert hci == GenServer.whereis(HCI)
+    assert :ok = HCI.hci_init()
+    assert true = HCI.hci_is_dev_up()
+  end
+  
+  test "call hci_init", %{hci: hci}  do
+    assert :ok = HCI.hci_init()
+    # HCI.stop()
+  end 
+
+  test "call foo", %{hci: hci} do
     assert hci == GenServer.whereis(HCI)
     x = 5
     y = HCI.foo(x)
     assert y == x + 1
-    HCI.stop()
+    # HCI.stop()
   end
 
-  test "call hci_init" do
-    {:ok, hci} = HCI.start_link()
-    assert :ok = HCI.hci_init()
-    HCI.stop()
-  end 
+  
 
 end
