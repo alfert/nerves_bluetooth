@@ -56,9 +56,9 @@ int _devId;
 /* =========================================*/
 
 
-int hci_init() {
+bool hci_init() {
   _socket = socket(AF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC, BTPROTO_HCI);
-  return _socket != -1;
+  return (_socket != -1);
 }
 
 int hci_close() {
@@ -67,7 +67,7 @@ int hci_close() {
   return 0;
 }
 
- bool hci_is_dev_up() {
+bool hci_is_dev_up() {
   struct hci_dev_info di;
   bool is_up = false;
 
@@ -116,11 +116,7 @@ int hci_dev_id_for(int* p_dev_id, bool is_up) {
 }
 
 
-/** Simple test functions */
-int foo(int x) {
+/** Simple test function */
+int hci_foo(int x) {
   return x+1;
-}
-
-int bar(int y) {
-  return y*2;
 }
