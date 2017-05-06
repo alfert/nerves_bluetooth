@@ -20,7 +20,8 @@ defmodule Rpi0Bt.Application do
       worker(Task, [&Bluetooth.run_dbus_daemon/0], id: :dbus_daemon),
       worker(Task, [&Bluetooth.run_hciuart/0],
           [id: :hci_uart, restart: :temporary]),
-      worker(Task, [&Bluetooth.run_bluetoothd/0], id: :bluetoothd)
+      worker(Task, [&Bluetooth.run_bluetoothd/0], id: :bluetoothd),
+      worker(Bluetooth.Ctl, [:power_on])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

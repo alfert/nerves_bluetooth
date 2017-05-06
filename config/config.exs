@@ -16,5 +16,7 @@ config :rpi0_bt, :wlan0,
   key_mgmt: :"WPA-PSK",
   psk: "your-key"
 
-  config :nerves, :firmware,
-    rootfs_additions: "rootfs-additions"
+config :nerves, :firmware,
+  rootfs_additions: "rootfs-additions"
+
+import_config "#{Mix.Project.config[:target]}.exs"

@@ -4,7 +4,7 @@ defmodule Bluetooth.GenBle do
   alias Bluetooth.Ctl, as: Driver
   require Logger
 
-  def start_link(driver) when is_pid(driver) do
+  def start_link(driver \\ GenServer.whereis(Driver)) when is_pid(driver) do
     GenServer.start_link(__MODULE__, [driver], [debug: [:log]])
   end
 
@@ -12,7 +12,22 @@ defmodule Bluetooth.GenBle do
     GenServer.call(ble, :controllers)
   end
 
-  defstruct [:driver, :monitor_ref, :controllers]
+  def devices(ble) do
+    GenServer.call(ble, :devices)
+  end
+
+  @doc """
+  Creates an iBeacon advertisement with `major` and `minor` values
+  """
+  def iBeacon(uuid \\ "b2a21ef4-2e71-11e7-b18b-acbc32956d67", major, minor) do
+    Driver.cmd("set-advertise-uuids #{uuid}")
+    Driver.cmd("set-advertise-manufacturer 76") # 76 = 0x004c Apple
+    Driver.cmd("set-advertise-service FF")
+    Driver.cmd("set-advertise-tx-power on")
+    Driver.cmd("advertise on")
+  end
+
+  defstruct [:driver, :monitor_ref, controllers: %{}, devices: %{}]
 
   defmodule Controller do
     @moduledoc """
@@ -24,14 +39,26 @@ defmodule Bluetooth.GenBle do
       discoverable: false]
   end
 
+  defmodule Device do
+    @moduledoc """
+    Data structure descibring a device and its (generic) state
+    """
+    @type t :: %__MODULE__{id: String.t, name: String.t, rssi: integer}
+    defstruct [id: "", name: "", rssi: 0]
+  end
+
   def init([driver]) do
     ref = Process.monitor(driver)
     Driver.attach(driver, self())
-    {:ok, %__MODULE__{driver: driver, monitor_ref: ref, controllers: %{}}}
+    {:ok, %__MODULE__{driver: driver, monitor_ref: ref}}
   end
 
   def handle_call(:controllers, _from, state = %__MODULE__{controllers: cs}) do
     Map.values(cs)
+    |> reply(state)
+  end
+  def handle_call(:devices, _from, state = %__MODULE__{devices: ds}) do
+    Map.values(ds)
     |> reply(state)
   end
 
@@ -44,15 +71,29 @@ defmodule Bluetooth.GenBle do
     end)
     {:noreply, final_state}
   end
+  def handle_info({:new, {:device, id, name}}, state = %__MODULE__{devices: ds}) do
+    d = %Device{id: id, name: name}
+    Logger.info "New controller: #{inspect d}"
+    {:noreply, %__MODULE__{state | devices: Map.put(ds, id, d)}}
+  end
+  def handle_info({:change, {:device, id, attributes}}, state = %__MODULE__{devices: ds}) do
+    case Map.get(ds, id) do
+      nil -> Logger.error("Unknown device #{id}")
+      d ->
+        new_d = struct!(d, attributes)
+        {:noreply,  %__MODULE__{state | devices: Map.put(ds, id, new_d)}}
+    end
+  end
   def handle_info({:new, {:controller, id, name}}, state = %__MODULE__{controllers: cs}) do
     c = %Controller{id: id, name: name}
+    Logger.info "New controller: #{inspect c}"
     {:noreply, %__MODULE__{state | controllers: Map.put(cs, id, c)}}
   end
   def handle_info({:change, {:controller, id, attributes}}, state = %__MODULE__{controllers: cs}) do
     case Map.get(cs, id) do
       nil -> Logger.error("Unknown controller #{id}")
       c ->
-        new_c = struct(c, attributes)
+        new_c = struct!(c, attributes)
         {:noreply,  %__MODULE__{state | controllers: Map.put(cs, id, new_c)}}
     end
   end
@@ -60,6 +101,10 @@ defmodule Bluetooth.GenBle do
     Logger.info("Driver #{inspect state.driver} is down")
     {:stop, :driver_down, state}
   end
+  # def handle_info(msg, state) when is_tuple(msg) do
+  #   Logger.error "GenBle.handle_info: Ignoring unknown message #{inspect msg}"
+  #   {:noreply, state}
+  # end
 
   defp reply(ret_value, state) do
     {:reply, ret_value, state}
