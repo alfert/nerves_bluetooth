@@ -91,7 +91,7 @@ int main() {
       res = hci_foo(i);
       return_val_p = erl_mk_int(res);
       erl_free_term(param);
-    } 
+    } else return_val_p = NULL;
     LOG("Assemble result");
     
     // construct the resulting pair of reference and value
