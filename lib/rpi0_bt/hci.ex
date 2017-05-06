@@ -26,6 +26,10 @@ defmodule Bluetooth.HCI do
   def hci_init() do
     GenServer.call(__MODULE__, {:hci_init, []})
   end
+
+  def hci_is_dev_up() do
+    GenServer.call(__MODULE__, {:hci_is_dev_up, []})
+  end
   
   def foo(x) do
     GenServer.call(__MODULE__, {:foo, [x]})
@@ -63,7 +67,7 @@ defmodule Bluetooth.HCI do
     ref = make_ref()
     port_msg = {ref, msg} |> :erlang.term_to_binary()
     send(port, {self(), {:command, port_msg}})
-    # return without returning, since the port sends a message back
+    # return without returning, since the port sends a message back later
     {:noreply, %__MODULE__{s | calls: Map.put(c, ref, from)}}
   end
 
