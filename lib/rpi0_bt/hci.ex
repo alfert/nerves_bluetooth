@@ -79,7 +79,7 @@ defmodule Bluetooth.HCI do
         # send the answer to the original caller
         GenServer.reply(caller, return_value)
         # remove that pending call from map of pending calls
-        %__MODULE__{calls: Map.delete(calls, ref)}
+        %__MODULE__{state | calls: Map.delete(calls, ref)}
       # _ -> state
     end
     {:noreply, new_state}
