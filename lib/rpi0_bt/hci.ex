@@ -16,19 +16,24 @@ defmodule Bluetooth.HCI do
   use GenServer
   require Logger
 
+  @spec start_link() :: {:ok, pid}
   def start_link() do
-    return_val = GenServer.start_link(__MODULE__, [], [name: __MODULE__])
-    {:ok, pid} = return_val
-    # 0 == GenServer.call(pid, {:hci_init, []})
-    return_val
+    GenServer.start_link(__MODULE__, [], [name: __MODULE__])
   end
 
+  @spec hci_init() :: :ok | {:error, any}
   def hci_init() do
     GenServer.call(__MODULE__, {:hci_init, []})
   end
 
+  @spec hci_is_dev_up() :: boolean
   def hci_is_dev_up() do
     GenServer.call(__MODULE__, {:hci_is_dev_up, []})
+  end
+
+  @spec hci_dev_id_for(boolean) :: non_neg_integer | nil
+  def hci_dev_id_for(is_up) when is_boolean(is_up) do
+    GenServer.call(__MODULE__, {:hci_dev_id_for, [is_up]})
   end
   
   def foo(x) do
