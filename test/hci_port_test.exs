@@ -18,6 +18,14 @@ defmodule Bluetooth.Test.HCIPort do
     {:ok, %{hci: hci}}
   end
 
+  test "which controller is up", %{hci: hci} do
+    assert :ok == HCI.hci_init()
+    assert true == HCI.hci_is_dev_up()
+    assert 0 == HCI.hci_dev_id_for(true)
+    assert nil == HCI.hci_dev_id_for(false)
+  end
+  
+
   test "get some information about controller", %{hci: hci} do
     assert hci == GenServer.whereis(HCI)
     assert :ok = HCI.hci_init()
