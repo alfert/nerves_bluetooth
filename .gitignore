@@ -13,3 +13,4 @@ erl_crash.dump
 *.o
 /priv/hci_ex
 /.vscode
+hci_ex.log
