@@ -49,7 +49,7 @@ int main() {
     fnp = erl_element(1, fun_tuple_p);
     argp = erl_element(2, fun_tuple_p);
 
-    LOG("Got a call to do with param: %d\n", i);
+    LOG("Got a call to do: %s\n", ERL_ATOM_PTR(fnp));
 
     /* =======================================
      * TODO: Add the next two functions, beware 
@@ -65,7 +65,7 @@ int main() {
       }
 
     }
-    else if (strncmp(ERL_ATOM_PTR(fnp), HCI_IS_DEV_UP, strlen(HCI_IS_DEV_UP)) == 0) {
+    else if (strncmp(ERL_ATOM_PTR(fnp), HCI_DEV_ID_FOR, strlen(HCI_DEV_ID_FOR)) == 0) {
       int device_id = -1;
       bool is_up = false;
       if (strncmp(ERL_ATOM_PTR(argp), "true", 4) == 0)
@@ -74,10 +74,12 @@ int main() {
       return_val_p = erl_mk_int(res);
 
     }
-    else if (strncmp(ERL_ATOM_PTR(fnp), HCI_INIT, strlen(HCI_INIT)) == 0) {
-      res = hci_init();
-      return_val_p = erl_mk_int(res);
-
+    else if (strncmp(ERL_ATOM_PTR(fnp), HCI_IS_DEV_UP, strlen(HCI_IS_DEV_UP)) == 0) {
+      if (hci_is_dev_up()) {
+        return_val_p = erl_mk_atom("true");
+      } else {
+        return_val_p = erl_mk_atom("false");
+      }
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_CLOSE, strlen(HCI_CLOSE)) == 0) {
       res = hci_close();

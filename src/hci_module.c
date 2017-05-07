@@ -30,6 +30,9 @@
 void vflog(const char *fmt, va_list args)  {
   FILE *f = fopen("./hci_ex.log", "a+");
   vfprintf(f, fmt, args);
+  if (fmt[strlen(fmt) - 1] != '\n') {
+    fprintf(f, "\n");
+  }
   fclose(f);
 }
 
@@ -68,6 +71,7 @@ int hci_close() {
 }
 
 bool hci_is_dev_up() {
+  LOG("enter hci_is_devup");
   struct hci_dev_info di;
   bool is_up = false;
 
@@ -76,6 +80,9 @@ bool hci_is_dev_up() {
 
   if (ioctl(_socket, HCIGETDEVINFO, (void *)&di) > -1) {
     is_up = (di.flags & (1 << HCI_UP)) != 0;
+  } else {
+    int error = errno;
+    LOG("ioctl returned <= -1, errno is set to %d", error); 
   }
 
   return is_up;
