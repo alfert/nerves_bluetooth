@@ -7,7 +7,7 @@
 #define false 0
 
 #ifdef DEBUG
-#define LOG(fmt, ...) flog(fmt, __VA_ARGS__)
+#define LOG(...) flog(__VA_ARGS__)
 #else
 #define LOG(fmt, ...)
 #endif
