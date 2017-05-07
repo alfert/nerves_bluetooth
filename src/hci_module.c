@@ -30,6 +30,9 @@
 void vflog(const char *fmt, va_list args)  {
   FILE *f = fopen("./hci_ex.log", "a+");
   vfprintf(f, fmt, args);
+  if (fmt[strlen(fmt) - 1] != '\n') {
+    fprintf(f, "\n");
+  }
   fclose(f);
 }
 
@@ -57,7 +60,9 @@ int _devId;
 
 
 bool hci_init() {
+  // SOCK__CLOEXEC enables event polling via epoll
   _socket = socket(AF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC, BTPROTO_HCI);
+  LOG("Raw socket is: %d", _socket);
   return (_socket != -1);
 }
 
@@ -68,6 +73,7 @@ int hci_close() {
 }
 
 bool hci_is_dev_up() {
+  LOG("enter hci_is_devup");
   struct hci_dev_info di;
   bool is_up = false;
 
@@ -76,13 +82,17 @@ bool hci_is_dev_up() {
 
   if (ioctl(_socket, HCIGETDEVINFO, (void *)&di) > -1) {
     is_up = (di.flags & (1 << HCI_UP)) != 0;
+  } else {
+    int error = errno;
+    LOG("ioctl returned <= -1, errno is set to %d", error); 
   }
 
   return is_up;
 }
 
 int hci_dev_id_for(int* p_dev_id, bool is_up) {
-  int dev_id = 0; // default
+  LOG("enter hci_dev_id_for is_up=%d", is_up);
+  int dev_id = -1; // default would be 0, but makes no sense to detect a dev id with a different state
 
   if (p_dev_id == NULL) {
     struct hci_dev_list_req *dl;
@@ -96,12 +106,14 @@ int hci_dev_id_for(int* p_dev_id, bool is_up) {
     if (ioctl(_socket, HCIGETDEVLIST, dl) > -1) {
       for (int i = 0; i < dl->dev_num; i++, dr++) {
         bool dev_up = dr->dev_opt & (1 << HCI_UP);
-        bool match = is_up ? dev_up : !dev_up;
+        // bool match = is_up ? dev_up : !dev_up;
+        bool match = (is_up == dev_up);
 
         if (match) {
           // choose the first device that is match
           // later on, it would be good to also HCIGETDEVINFO and check the HCI_RAW flag
           dev_id = dr->dev_id;
+          LOG("Found matching dev_id %d", dev_id);
           break;
         }
       }

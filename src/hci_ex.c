@@ -49,7 +49,7 @@ int main() {
     fnp = erl_element(1, fun_tuple_p);
     argp = erl_element(2, fun_tuple_p);
 
-    LOG("Got a call to do with param: %d\n", i);
+    LOG("Got a call to do: %s\n", ERL_ATOM_PTR(fnp));
 
     /* =======================================
      * TODO: Add the next two functions, beware 
@@ -63,21 +63,35 @@ int main() {
       } else {
         return_val_p = erl_mk_atom("error");
       }
-
+    }
+    else if (strncmp(ERL_ATOM_PTR(fnp), HCI_DEV_ID_FOR, strlen(HCI_DEV_ID_FOR)) == 0) {
+      // int device_id = -1; // currently no used.
+      bool is_up = false;
+      LOG("found HCI_DEV_ID_FOR");
+      // the parameter is the first element in the list
+      ETERM *param = ERL_CONS_HEAD(argp);
+      if (strncmp(ERL_ATOM_PTR(param), "true", 4) == 0) {
+        is_up = true;
+        LOG("enter hci_dev_id_for(true)");
+      } else {
+        LOG("enter hci_dev_id_for(false)");
+      }
+      // first parameter == NULL means that hci_dev_up searches for first 
+      // device with state of `is_up`
+      res = hci_dev_id_for(NULL, is_up);
+      if (res > -1) {
+        return_val_p = erl_mk_int(res);
+      } else {
+        return_val_p = erl_mk_atom("nil");
+      }
+      erl_free_term(param);
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_IS_DEV_UP, strlen(HCI_IS_DEV_UP)) == 0) {
-      int device_id = -1;
-      bool is_up = false;
-      if (strncmp(ERL_ATOM_PTR(argp), "true", 4) == 0)
-        is_up = true;
-      res = hci_dev_id_for(&device_id, is_up);
-      return_val_p = erl_mk_int(res);
-
-    }
-    else if (strncmp(ERL_ATOM_PTR(fnp), HCI_INIT, strlen(HCI_INIT)) == 0) {
-      res = hci_init();
-      return_val_p = erl_mk_int(res);
-
+      if (hci_is_dev_up()) {
+        return_val_p = erl_mk_atom("true");
+      } else {
+        return_val_p = erl_mk_atom("false");
+      }
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_CLOSE, strlen(HCI_CLOSE)) == 0) {
       res = hci_close();
@@ -91,7 +105,7 @@ int main() {
       res = hci_foo(i);
       return_val_p = erl_mk_int(res);
       erl_free_term(param);
-    } 
+    } else return_val_p = NULL;
     LOG("Assemble result");
     
     // construct the resulting pair of reference and value

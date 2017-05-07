@@ -20,7 +20,8 @@ HCI_DEFINES = -DCONFIG_CTRL_IFACE -DCONFIG_CTRL_IFACE_UNIX
 # Linux: LDFLAGS += -lrt $(ERL_LIB)
 LDFLAGS += $(ERL_LIB)
 LDFLAGS += -lrt -pthread
-CFLAGS ?= -O2 -Wall -Wextra -Wno-unused-parameter -pthread -I $(ERL_H)
+CFLAGS ?= -O2 -Wall -Wextra -Wno-unused-parameter -pthread -I $(ERL_H) 
+CFLAGS += $(EXTRA_CFLAGS)
 CC ?= $(CROSSCOMPILE)gcc
 
 # If not cross-compiling, then run sudo by default
