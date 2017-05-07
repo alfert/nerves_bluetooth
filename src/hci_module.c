@@ -89,7 +89,8 @@ bool hci_is_dev_up() {
 }
 
 int hci_dev_id_for(int* p_dev_id, bool is_up) {
-  int dev_id = 0; // default
+  LOG("enter hci_dev_id_for is_up=%d", is_up);
+  int dev_id = -1; // default would be 0, but makes no sense to detect a dev id with a different state
 
   if (p_dev_id == NULL) {
     struct hci_dev_list_req *dl;
@@ -103,12 +104,14 @@ int hci_dev_id_for(int* p_dev_id, bool is_up) {
     if (ioctl(_socket, HCIGETDEVLIST, dl) > -1) {
       for (int i = 0; i < dl->dev_num; i++, dr++) {
         bool dev_up = dr->dev_opt & (1 << HCI_UP);
-        bool match = is_up ? dev_up : !dev_up;
+        // bool match = is_up ? dev_up : !dev_up;
+        bool match = (is_up == dev_up);
 
         if (match) {
           // choose the first device that is match
           // later on, it would be good to also HCIGETDEVINFO and check the HCI_RAW flag
           dev_id = dr->dev_id;
+          LOG("Found matching dev_id %d", dev_id);
           break;
         }
       }
