@@ -60,7 +60,9 @@ int _devId;
 
 
 bool hci_init() {
+  // SOCK__CLOEXEC enables event polling via epoll
   _socket = socket(AF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC, BTPROTO_HCI);
+  LOG("Raw socket is: %d", _socket);
   return (_socket != -1);
 }
 
