@@ -63,16 +63,28 @@ int main() {
       } else {
         return_val_p = erl_mk_atom("error");
       }
-
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_DEV_ID_FOR, strlen(HCI_DEV_ID_FOR)) == 0) {
-      int device_id = -1;
+      // int device_id = -1; // currently no used.
       bool is_up = false;
-      if (strncmp(ERL_ATOM_PTR(argp), "true", 4) == 0)
+      LOG("found HCI_DEV_ID_FOR");
+      // the parameter is the first element in the list
+      ETERM *param = ERL_CONS_HEAD(argp);
+      if (strncmp(ERL_ATOM_PTR(param), "true", 4) == 0) {
         is_up = true;
-      res = hci_dev_id_for(&device_id, is_up);
-      return_val_p = erl_mk_int(res);
-
+        LOG("enter hci_dev_id_for(true)");
+      } else {
+        LOG("enter hci_dev_id_for(false)");
+      }
+      // first parameter == NULL means that hci_dev_up searches for first 
+      // device with state of `is_up`
+      res = hci_dev_id_for(NULL, is_up);
+      if (res > -1) {
+        return_val_p = erl_mk_int(res);
+      } else {
+        return_val_p = erl_mk_atom("nil");
+      }
+      erl_free_term(param);
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_IS_DEV_UP, strlen(HCI_IS_DEV_UP)) == 0) {
       if (hci_is_dev_up()) {
