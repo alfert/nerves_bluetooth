@@ -17,8 +17,21 @@
 #define HCI_IS_DEV_UP "hci_is_dev_up"
 #define HCI_DEV_ID_FOR "hci_dev_id_for"
 
+void read_from_stdin();
 
 int main() {
+  LOG("\n>>>>>>>>>>>>>>>\n");
+  // Initialize the Erl_Interface library
+  erl_init(NULL, 0);
+
+  LOG("Starting up the hci_ex");
+
+  read_from_stdin();
+  
+  LOG("Stopping hci_ex");
+}
+
+void read_from_stdin() {
   ETERM *tuplep, *return_val_p;
   ETERM *fnp, *argp, *refp, *fun_tuple_p;
   // the array of ETERM pointer for the result
@@ -29,12 +42,6 @@ int main() {
 
   byte buf[100];
   // long allocated, freed;
-
-  LOG("\n>>>>>>>>>>>>>>>\n");
-  // Initialize the Erl_Interface library
-  erl_init(NULL, 0);
-
-  LOG("Starting up the hci_ex");
 
   int read_count = -1;
   while ((read_count = read_cmd(buf)) > 0) {
@@ -126,6 +133,6 @@ int main() {
     erl_free_compound(result_pair);
     erl_free_term(refp);
   }
-  LOG("could only read %d bytes\n", read_count);
-  LOG("Stopping hci_ex");
+   LOG("could only read %d bytes\n", read_count);
+ 
 }
