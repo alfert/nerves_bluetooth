@@ -6,7 +6,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/epoll.h>
+#include <sys/types.h>
 
+#include "global.h"
 #include "hci_module.h"
 #include "hci_interface.h"
 
@@ -23,10 +26,59 @@ int main() {
   LOG("\n>>>>>>>>>>>>>>>\n");
   // Initialize the Erl_Interface library
   erl_init(NULL, 0);
-
   LOG("Starting up the hci_ex");
 
-  read_from_stdin();
+  // Create EPOLLing socket
+  int epollfd = epoll_create1(0);
+  struct epoll_event event;
+
+  // Add stdin to epolling
+  event.events = EPOLLIN|EPOLLPRI|EPOLLERR;
+  event.data.fd = STDIN_FILENO;
+  if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &event) != 0) {
+      LOG("epoll_ctl add stdin failed.");
+      return 1;
+  }
+
+  for (;;) {
+     int number_of_events = epoll_wait(epollfd, &event, 1, -1);
+     if (number_of_events < 0) {
+        LOG("epoll_wait failed.");
+        return 2;
+     }
+     if (number_of_events == 0) {
+         continue;
+     }
+
+     if (event.data.fd == STDIN_FILENO) {
+         // read input line
+         read_from_stdin();
+         if (errno != EAGAIN) {
+           // no more data available on stdin: the file is closed
+           // therefore, we exit here.
+           break;
+         }
+      } 
+      /* else if (event.data.fd == sockfd) {
+         // accept client
+         struct sockaddr_in client_addr;
+         socklen_t addrlen = sizeof (client_addr);
+         int clientfd = accept(sockfd, (struct sockaddr*) &client_addr, &addrlen);
+         if (clientfd == -1) {
+             LOG("could not accept");
+             return 4;
+         }
+         send(clientfd, "Bye", 3, 0);
+         close(clientfd);
+     } */
+     else {
+         // cannot happen™
+         LOG("Bad fd: %d\n", event.data.fd);
+         return 5;
+     }
+  }
+
+  close(epollfd);
   
   LOG("Stopping hci_ex");
 }
@@ -44,6 +96,13 @@ void read_from_stdin() {
   // long allocated, freed;
 
   int read_count = -1;
+
+  /****
+   * Condition must be different: If a failure exists, then 
+   * errno must be asked for EWOULDBLOCK and give up in this case.
+   ****
+   */
+
   while ((read_count = read_cmd(buf)) > 0) {
     LOG("read command successful, read %d bytes\n", read_count);
     /***************************
