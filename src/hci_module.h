@@ -37,6 +37,10 @@ int hci_dev_id_for(int* p_dev_id, bool is_up);
  */
 bool hci_is_dev_up();
 
+/** int hci_bind_raw(int *dev_id)
+ * Binds the raw socket and starts listening to events
+ */
+int hci_bind_raw(int *dev_id);
 
 /* Testing function, from the tutorial */
 int hci_foo(int x);

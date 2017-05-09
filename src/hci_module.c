@@ -55,7 +55,9 @@ void flog(const char *fmt, ...)  {
 
 int _mode;
 int hci_socket = -1;
-int _devId;
+int _dev_id;
+uint8_t _address[6];
+uint8_t _address_type;
 
 /* =========================================*/
 
@@ -74,12 +76,12 @@ int hci_close() {
 }
 
 bool hci_is_dev_up() {
-  LOG("enter hci_is_devup");
+  LOG("enter hci_is_dev_up");
   struct hci_dev_info di;
   bool is_up = false;
 
   memset(&di, 0x00, sizeof(di));
-  di.dev_id = _devId;
+  di.dev_id = _dev_id;
 
   if (ioctl(hci_socket, HCIGETDEVINFO, (void *)&di) > -1) {
     is_up = (di.flags & (1 << HCI_UP)) != 0;
@@ -128,6 +130,39 @@ int hci_dev_id_for(int* p_dev_id, bool is_up) {
   return dev_id;
 }
 
+
+int hci_bind_raw(int *dev_id) {
+  struct sockaddr_hci a;
+  struct hci_dev_info di;
+
+  memset(&a, 0, sizeof(a));
+  a.hci_family = AF_BLUETOOTH;
+  a.hci_dev = hci_dev_id_for(dev_id, true);
+  a.hci_channel = HCI_CHANNEL_RAW;
+
+  _dev_id = a.hci_dev;
+  _mode = HCI_CHANNEL_RAW;
+
+  bind(hci_socket, (struct sockaddr *) &a, sizeof(a));
+
+  // get the local address and address type
+  memset(&di, 0x00, sizeof(di));
+  di.dev_id = _dev_id;
+  memset(_address, 0, sizeof(_address));
+  _address_type = 0;
+
+  if (ioctl(hci_socket, HCIGETDEVINFO, (void *)&di) > -1) {
+    memcpy(_address, &di.bdaddr, sizeof(di.bdaddr));
+    _address_type = di.type;
+
+    if (_address_type == 3) {
+      // 3 is a weird type, use 1 (public) instead
+      _address_type = 1;
+    }
+  }
+
+  return _dev_id;
+}
 
 /** Simple test function */
 int hci_foo(int x) {
