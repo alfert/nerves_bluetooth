@@ -19,6 +19,7 @@
 #define HCI_CLOSE "hci_close"
 #define HCI_IS_DEV_UP "hci_is_dev_up"
 #define HCI_DEV_ID_FOR "hci_dev_id_for"
+#define HCI_BIND_RAW "hci_bind_raw"
 
 // Function Prototypes
 void read_from_stdin();
@@ -159,6 +160,20 @@ void read_from_stdin() {
       } else {
         return_val_p = erl_mk_atom("error");
       }
+    }
+    else if (strncmp(ERL_ATOM_PTR(fnp), HCI_BIND_RAW, strlen(HCI_BIND_RAW)) == 0) {
+      LOG("found HCI_BIND_RAW");
+      // the parameter is the first element in the list
+      ETERM *param = ERL_CONS_HEAD(argp);
+      int dev_id = ERL_INT_VALUE(param);
+      
+      res = hci_bind_raw(&dev_id);
+      if (res > -1) {
+        return_val_p = erl_mk_int(res);
+      } else {
+        return_val_p = erl_mk_atom("nil");
+      }
+      erl_free_term(param);
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_DEV_ID_FOR, strlen(HCI_DEV_ID_FOR)) == 0) {
       // int device_id = -1; // currently no used.
