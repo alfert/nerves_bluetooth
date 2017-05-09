@@ -24,6 +24,7 @@
 // we do not include hci_lib.h, because the functions defined there are
 // implemented in Elixir instead.
 
+#include "global.h"
 #include "hci_module.h"
 
 #ifdef DEBUG
@@ -53,7 +54,7 @@ void flog(const char *fmt, ...)  {
 /* =========================================*/
 
 int _mode;
-int _socket = -1;
+int hci_socket = -1;
 int _devId;
 
 /* =========================================*/
@@ -61,14 +62,14 @@ int _devId;
 
 bool hci_init() {
   // SOCK__CLOEXEC enables event polling via epoll
-  _socket = socket(AF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC, BTPROTO_HCI);
-  LOG("Raw socket is: %d", _socket);
-  return (_socket != -1);
+  hci_socket = socket(AF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC, BTPROTO_HCI);
+  LOG("Raw socket is: %d", hci_socket);
+  return (hci_socket != -1);
 }
 
 int hci_close() {
-  close(_socket);
-  _socket = -1;
+  close(hci_socket);
+  hci_socket = -1;
   return 0;
 }
 
@@ -80,7 +81,7 @@ bool hci_is_dev_up() {
   memset(&di, 0x00, sizeof(di));
   di.dev_id = _devId;
 
-  if (ioctl(_socket, HCIGETDEVINFO, (void *)&di) > -1) {
+  if (ioctl(hci_socket, HCIGETDEVINFO, (void *)&di) > -1) {
     is_up = (di.flags & (1 << HCI_UP)) != 0;
   } else {
     int error = errno;
@@ -103,7 +104,7 @@ int hci_dev_id_for(int* p_dev_id, bool is_up) {
 
     dl->dev_num = HCI_MAX_DEV;
 
-    if (ioctl(_socket, HCIGETDEVLIST, dl) > -1) {
+    if (ioctl(hci_socket, HCIGETDEVLIST, dl) > -1) {
       for (int i = 0; i < dl->dev_num; i++, dr++) {
         bool dev_up = dr->dev_opt & (1 << HCI_UP);
         // bool match = is_up ? dev_up : !dev_up;
