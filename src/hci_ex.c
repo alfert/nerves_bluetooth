@@ -20,7 +20,10 @@
 #define HCI_IS_DEV_UP "hci_is_dev_up"
 #define HCI_DEV_ID_FOR "hci_dev_id_for"
 
+// Function Prototypes
 void read_from_stdin();
+void process_hci_data(char *buffer, int length);
+
 
 int main() {
   LOG("\n>>>>>>>>>>>>>>>\n");
@@ -28,11 +31,15 @@ int main() {
   erl_init(NULL, 0);
   LOG("Starting up the hci_ex");
 
+  // last version of hci_socket to detect changes in the main loop. 
+  int old_hci_socket = -1;
+
   // Create EPOLLing socket
   int epollfd = epoll_create1(0);
   struct epoll_event event;
 
   // Add stdin to epolling
+  memset(&event, 0, sizeof(event));
   event.events = EPOLLIN|EPOLLPRI|EPOLLERR;
   event.data.fd = STDIN_FILENO;
   if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &event) != 0) {
@@ -40,15 +47,39 @@ int main() {
       return 1;
   }
 
+  // Add hci_socket for epolling. We declare only the variables here
+  struct epoll_event hci_event;
+  memset(&hci_event, 0, sizeof(hci_event));
+  // We use Edge triggered polling
+  hci_event.events = EPOLLIN | EPOLLET;  
+
   for (;;) {
-     int number_of_events = epoll_wait(epollfd, &event, 1, -1);
-     if (number_of_events < 0) {
+      // Check for changes of the hci_socket. It may go from non-available (-1) to 
+      // to available (>= 0) and back again. 
+      if (hci_socket != old_hci_socket) {
+        if (hci_socket < 0) {
+          hci_event.data.fd = old_hci_socket;
+          if (epoll_ctl(epollfd, EPOLL_CTL_DEL, old_hci_socket, &hci_event) != 0) {
+            LOG("epoll_ctl delete hci_socket %d failed", old_hci_socket);
+            exit(1);
+          }
+        } else {
+          old_hci_socket = hci_socket;
+          hci_event.data.fd = hci_socket;
+          if (epoll_ctl(epollfd, EPOLL_CTL_ADD, hci_socket, &hci_event) != 0) {
+            LOG("epoll_ctl add hci_socket %d failed", old_hci_socket);
+            exit(1);
+          }
+        }
+      }
+      int number_of_events = epoll_wait(epollfd, &event, 1, -1);
+      if (number_of_events < 0) {
         LOG("epoll_wait failed.");
         return 2;
-     }
-     if (number_of_events == 0) {
-         continue;
-     }
+      }
+      if (number_of_events == 0) {
+        continue;
+      }
 
      if (event.data.fd == STDIN_FILENO) {
          // read input line
@@ -59,18 +90,23 @@ int main() {
            break;
          }
       } 
-      /* else if (event.data.fd == sockfd) {
-         // accept client
-         struct sockaddr_in client_addr;
-         socklen_t addrlen = sizeof (client_addr);
-         int clientfd = accept(sockfd, (struct sockaddr*) &client_addr, &addrlen);
-         if (clientfd == -1) {
-             LOG("could not accept");
-             return 4;
-         }
-         send(clientfd, "Bye", 3, 0);
-         close(clientfd);
-     } */
+      else if (event.data.fd == hci_socket) {
+        // read from socket. 1kb should be enough
+        
+          int length = 0;
+          char data[1024];
+          while(1) {
+            length = read(hci_socket, data, sizeof(data));
+            if (length < 0 ) {
+              if (errno == EAGAIN) {
+                // no more data available. finish the loop.
+                break;
+              }
+            } else {
+              process_hci_data(data, length);
+            }
+          }
+     } 
      else {
          // cannot happen™
          LOG("Bad fd: %d\n", event.data.fd);
@@ -116,12 +152,6 @@ void read_from_stdin() {
     argp = erl_element(2, fun_tuple_p);
 
     LOG("Got a call to do: %s\n", ERL_ATOM_PTR(fnp));
-
-    /* =======================================
-     * TODO: Add the next two functions, beware 
-     * several parameters and types! 
-     * =======================================
-     */
 
     if (strncmp(ERL_ATOM_PTR(fnp), HCI_INIT, strlen(HCI_INIT)) == 0) {
       if (hci_init()) {
@@ -192,6 +222,31 @@ void read_from_stdin() {
     erl_free_compound(result_pair);
     erl_free_term(refp);
   }
-   LOG("could only read %d bytes\n", read_count);
- 
+  LOG("could only read %d bytes\n", read_count);
+}
+
+void process_hci_data(char *buffer, int length) {
+  ETERM *result_pair, *event_atom_p, *binary_p;
+  // the array of ETERM pointer for the result
+  ETERM *resultp[2];
+  // IO buffer
+  byte buf[2048];
+
+  event_atom_p = erl_mk_atom("event");
+  binary_p = erl_mk_binary(buffer, length);
+
+  resultp[0] = event_atom_p;
+  resultp[1] = binary_p;
+  result_pair = erl_mk_tuple(resultp, 2);
+
+  LOG("Encode event of %d bytes\n", length);
+  erl_encode(result_pair, buf);
+  LOG("Write event");
+  write_cmd(buf, erl_term_len(result_pair));
+
+  LOG("Free erlang term variables");
+  erl_free_compound(result_pair);
+  erl_free(event_atom_p);
+  erl_free(binary_p);
+
 }
