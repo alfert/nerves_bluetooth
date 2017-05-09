@@ -35,6 +35,12 @@ defmodule Bluetooth.HCI do
   def hci_dev_id_for(is_up) when is_boolean(is_up) do
     GenServer.call(__MODULE__, {:hci_dev_id_for, [is_up]})
   end
+
+  @spec hci_bind_raw(non_neg_integer) :: integer
+  def hci_bind_raw(dev_id) do
+    GenServer.call(__MODULE__, {:hci_bind_raw, [dev_id]})
+  end
+  
   
   def foo(x) do
     GenServer.call(__MODULE__, {:foo, [x]})

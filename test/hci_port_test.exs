@@ -18,6 +18,15 @@ defmodule Bluetooth.Test.HCIPort do
     {:ok, %{hci: hci}}
   end
 
+  test "Bind the socket", %{hci: hci} do
+    assert :ok == HCI.hci_init()
+    assert true == HCI.hci_is_dev_up()
+    # bind hci_device to the socket 0
+    assert 0 == HCI.hci_bind_raw(0);
+  end
+  
+
+
   test "which controller is up", %{hci: hci} do
     assert :ok == HCI.hci_init()
     assert true == HCI.hci_is_dev_up()
