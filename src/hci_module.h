@@ -42,6 +42,11 @@ bool hci_is_dev_up();
  */
 int hci_bind_raw(int *dev_id);
 
+/* int hci_write(byte *data, int size)
+ * Write the data to the hci socket, returns the result of write
+ */
+int hci_write(byte *data, int size);
+
 /* Testing function, from the tutorial */
 int hci_foo(int x);
 

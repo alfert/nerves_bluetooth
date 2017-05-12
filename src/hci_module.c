@@ -168,6 +168,11 @@ int hci_bind_raw(int *dev_id) {
   return _dev_id;
 }
 
+int hci_write(byte *data, int size) {
+  LOG("write %d bytes to hci_socket %d", size, hci_socket);
+  write(hci_socket, data, size);
+}
+
 /** Simple test function */
 int hci_foo(int x) {
   return x+1;
