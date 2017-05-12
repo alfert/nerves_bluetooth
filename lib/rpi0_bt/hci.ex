@@ -41,6 +41,20 @@ defmodule Bluetooth.HCI do
     GenServer.call(__MODULE__, {:hci_bind_raw, [dev_id]})
   end
   
+  @spec hci_send_command(binary) :: :ok
+  def hci_send_command(message) when is_binary(message) do
+    GenServer.call(__MODULE__, {:hci_send_command, [message]})
+  end
+  #def hci_send_command(<<ogf :: unsigned-integer-size(6)>>, <<ocf :: unsigned-integer-size(10)>>, params) 
+  def hci_send_command(ogf, ocf, params) 
+  when is_binary(params) and byte_size(params) < 256 and ogf < 64 and ocf < 1024 do
+    package = <<
+      ogf :: unsigned-integer-size(6)-little, 
+      ocf :: unsigned-integer-size(10)-little,
+      byte_size(params) :: unsigned-integer-size(8)-little,
+      params :: binary>>
+    hci_send_command(package)
+  end  
   
   def foo(x) do
     GenServer.call(__MODULE__, {:foo, [x]})

@@ -18,6 +18,15 @@ defmodule Bluetooth.Test.HCIPort do
     {:ok, %{hci: hci}}
   end
 
+  test  "Send a command", %{hci: hci} do
+    assert :ok == HCI.hci_init()
+    assert true == HCI.hci_is_dev_up()
+    assert 0 == HCI.hci_bind_raw(0);
+    # this is the Read Local Version Information Command
+    assert :ok == HCI.hci_send_command(0x04, 0x01, <<>>)
+  end
+  
+
   test "Bind the socket", %{hci: hci} do
     assert :ok == HCI.hci_init()
     assert true == HCI.hci_is_dev_up()
