@@ -10,8 +10,8 @@
 #include <sys/types.h>
 
 #include "global.h"
-#include "hci_module.h"
 #include "hci_interface.h"
+#include "hci_module.h"
 
 // Function names defined between Elixir and C
 #define FOO "foo"
@@ -20,6 +20,7 @@
 #define HCI_IS_DEV_UP "hci_is_dev_up"
 #define HCI_DEV_ID_FOR "hci_dev_id_for"
 #define HCI_BIND_RAW "hci_bind_raw"
+#define HCI_SEND_COMMAND "hci_send_command"
 
 // Function Prototypes
 void read_from_stdin();
@@ -172,6 +173,21 @@ void read_from_stdin() {
         return_val_p = erl_mk_int(res);
       } else {
         return_val_p = erl_mk_atom("nil");
+      }
+      erl_free_term(param);
+    }
+    else if (strncmp(ERL_ATOM_PTR(fnp), HCI_SEND_COMMAND, strlen(HCI_SEND_COMMAND)) == 0) {
+      LOG("found HCI_SEND_COMMAND");
+      // the parameter is the first element in the list
+      ETERM *param = ERL_CONS_HEAD(argp);
+      byte *cmd = ERL_BIN_PTR(param);
+      int size = ERL_BIN_SIZE(param);
+      
+      res = hci_write(cmd, size);
+      if (res > -1) {
+        return_val_p = erl_mk_atom("ok");
+      } else {
+        return_val_p = erl_mk_atom(strerror(errno));
       }
       erl_free_term(param);
     }
