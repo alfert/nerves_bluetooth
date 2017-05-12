@@ -5,5 +5,7 @@
 #define GLOBAL_H
 
 extern int hci_socket;
+typedef unsigned char byte;
+
 
 #endif
