@@ -49,8 +49,8 @@ defmodule Bluetooth.HCI do
   def hci_send_command(ogf, ocf, params) 
   when is_binary(params) and byte_size(params) < 256 and ogf < 64 and ocf < 1024 do
     package = <<
-      ogf :: unsigned-integer-size(6)-little, 
       ocf :: unsigned-integer-size(10)-little,
+      ogf :: unsigned-integer-size(6)-little, 
       byte_size(params) :: unsigned-integer-size(8)-little,
       params :: binary>>
     hci_send_command(package)
