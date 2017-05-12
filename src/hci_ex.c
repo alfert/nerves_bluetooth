@@ -184,10 +184,10 @@ void read_from_stdin() {
       int size = ERL_BIN_SIZE(param);
       
       res = hci_write(cmd, size);
-      if (res > -1) {
+      if (res == 0) {
         return_val_p = erl_mk_atom("ok");
       } else {
-        return_val_p = erl_mk_atom(strerror(errno));
+        return_val_p = erl_mk_atom(strerror(res));
       }
       erl_free_term(param);
     }
