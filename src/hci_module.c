@@ -142,8 +142,12 @@ int hci_bind_raw(int *dev_id) {
 
   _dev_id = a.hci_dev;
   _mode = HCI_CHANNEL_RAW;
-
-  bind(hci_socket, (struct sockaddr *) &a, sizeof(a));
+  
+  if (bind(hci_socket, (struct sockaddr *) &a, sizeof(a)) < 0) {
+    int error = errno;
+    LOG("Bind failed. Reason: %d (%s)", error, strerror(error));
+    return -1;
+  }
 
   // get the local address and address type
   memset(&di, 0x00, sizeof(di));
