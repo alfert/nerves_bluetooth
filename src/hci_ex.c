@@ -25,7 +25,9 @@
 // Function Prototypes
 void read_from_stdin();
 void process_hci_data(char *buffer, int length);
-
+void check_for_hci_socket_changes(int epollfd, struct epoll_event *hci_event, int &old_hci_socket);
+int process_stdin_event(struct event_poll event);
+int process_socket_event(struct event_poll event);
 // Constants
 #define MAX_EVENTS 64
 
@@ -35,7 +37,7 @@ int main() {
   erl_init(NULL, 0);
   LOG("Starting up the hci_ex");
 
-  // last version of hci_socket to detect changes in the main loop. 
+  // last version of hci_socket to detect changes in the main loop.
   int old_hci_socket = -1;
 
   // Create EPOLLing socket
@@ -56,83 +58,71 @@ int main() {
   struct epoll_event hci_event;
   memset(&hci_event, 0, sizeof(hci_event));
   // We use Edge triggered polling
-  hci_event.events = EPOLLIN | EPOLLET;  
+  hci_event.events = EPOLLIN | EPOLLET;
 
+  bool finish = FALSE;
 
-  for (;;) {
-      // Check for changes of the hci_socket. It may go from non-available (-1) to 
-      // to available (>= 0) and back again. 
-      LOG("Checks sockets. hci_socket %d and old_hci_socket %d", hci_socket, old_hci_socket);
-      if (hci_socket != old_hci_socket) {
-        LOG("hci_socket change detected");
-        if (hci_socket < 0) {
-          hci_event.data.fd = old_hci_socket;
-          LOG("hci_socket is now %d, delete old hci_socket %d from epoll", hci_socket, old_hci_socket);
-          if (epoll_ctl(epollfd, EPOLL_CTL_DEL, old_hci_socket, &hci_event) != 0) {
-            LOG("epoll_ctl delete hci_socket %d failed", old_hci_socket);
-            exit(1);
-          }
-        } else {
-          old_hci_socket = hci_socket;
-          hci_event.data.fd = hci_socket;
-          LOG("hci_socket is new: %d - add to epoll set", hci_socket);
-          if (epoll_ctl(epollfd, EPOLL_CTL_ADD, hci_socket, &hci_event) != 0) {
-            LOG("epoll_ctl add hci_socket %d failed", old_hci_socket);
-            exit(1);
-          }
-        }
-      }
-
-      int number_of_events = epoll_wait(epollfd, events, MAX_EVENTS, -1);
-      if (number_of_events < 0) {
-        LOG("epoll_wait failed.");
-        return 2;
-      }
-      if (number_of_events == 0) {
-        continue;
-      }
-      for (int i = 0; i < number_of_events; i++) {
-        if (events[i].data.fd == STDIN_FILENO) {
-            // read input line
-            read_from_stdin();
-            if (errno != EAGAIN) {
-              // no more data available on stdin: the file is closed
-              // therefore, we exit here.
-              break;
-            }
-          } 
-          else 
-          if (events[i].data.fd == hci_socket) {
-            // read from socket. 1kb should be enough
-            LOG("Read event from hci_socket");
-            int length = 0;
-            char data[1024];
-            while(1) {
-              length = read(hci_socket, data, sizeof(data));
-              if (length < 0 ) {
-                if (errno == EAGAIN) {
-                  // no more data available. finish the loop.
-                  break;
-                }
-              } else {
-                process_hci_data(data, length);
-              }
-            }
-          } 
-          else {
-            // cannot happen™
-            LOG("Bad fd: %d\n", events[i].data.fd);
-            return 5;
-          }
-  
-
-
+  while (!FINISH) {
+    check_for_hci_socket_changes(epollfd, &hci_event, old_hci_socket);
+    int number_of_events = epoll_wait(epollfd, events, MAX_EVENTS, -1);
+    if (number_of_events < 0) {
+      LOG("epoll_wait failed.");
+      return 2;
+    }
+    if (number_of_events == 0) {
+      continue;
+    }
+    for (int i = 0; i < number_of_events; i++) {
+      int processed = 0;
+      if ((processed = process_stdin_event(events[i)) < 0)
+        finish = TRUE;
+      if ((processed = process_socket_event(events[i)) < 0)
+        finish = TRUE;
+      if (processed == 0) {
+        // cannot happen
+        LOG("Bad fd: %d\n", events[i].data.fd);
+        return 5;
       }
     }
-
+  }
   close(epollfd);
-  
+
   LOG("Stopping hci_ex");
+  return 0;
+}
+
+int process_stdin_event(struct event_poll event) {
+  if (event.data.fd == STDIN_FILENO) {
+    read_from_stdin();
+    if (errno != EAGAIN) {
+      // no more data available on stdin: the file is closed
+      // therefore, we exit here.
+      return -1;
+    }
+    return 1;
+  }
+  else return 0;
+}
+
+int process_socket_event(struct event_poll event) {
+  if (event.data.fd == hci_socket) {
+    // read from socket. 1kb should be enough
+    LOG("Read event from hci_socket");
+    int length = 0;
+    char data[1024];
+    while(1) {
+      length = read(hci_socket, data, sizeof(data));
+      if (length < 0 ) {
+        if (errno == EAGAIN) {
+          // no more data available. finish the loop.
+          return 1;
+        }
+      } else {
+        process_hci_data(data, length);
+      }
+    }
+  }
+  else return 0;
 }
 
 void read_from_stdin() {
@@ -145,12 +135,11 @@ void read_from_stdin() {
   ETERM *result_pair;
 
   byte buf[100];
-  // long allocated, freed;
 
   int read_count = -1;
 
   /****
-   * Condition must be different: If a failure exists, then 
+   * Condition must be different: If a failure exists, then
    * errno must be asked for EWOULDBLOCK and give up in this case.
    ****
    */
@@ -181,7 +170,7 @@ void read_from_stdin() {
       // the parameter is the first element in the list
       ETERM *param = ERL_CONS_HEAD(argp);
       int dev_id = ERL_INT_VALUE(param);
-      
+
       res = hci_bind_raw(&dev_id);
       if (res > -1) {
         return_val_p = erl_mk_int(res);
@@ -197,7 +186,7 @@ void read_from_stdin() {
       ETERM *param = ERL_CONS_HEAD(argp);
       byte *cmd = ERL_BIN_PTR(param);
       int size = ERL_BIN_SIZE(param);
-      
+
       res = hci_write(cmd, size);
       if (res == 0) {
         return_val_p = erl_mk_atom("ok");
@@ -218,7 +207,7 @@ void read_from_stdin() {
       } else {
         LOG("enter hci_dev_id_for(false)");
       }
-      // first parameter == NULL means that hci_dev_up searches for first 
+      // first parameter == NULL means that hci_dev_up searches for first
       // device with state of `is_up`
       res = hci_dev_id_for(NULL, is_up);
       if (res > -1) {
@@ -249,7 +238,7 @@ void read_from_stdin() {
       erl_free_term(param);
     } else return_val_p = NULL;
     LOG("Assemble result");
-    
+
     // construct the resulting pair of reference and value
     resultp[0] = refp;
     resultp[1] = return_val_p;
@@ -294,5 +283,31 @@ void process_hci_data(char *buffer, int length) {
   erl_free_compound(result_pair);
   erl_free(event_atom_p);
   erl_free(binary_p);
+
+}
+
+// Check for changes of the hci_socket. It may go from non-available (-1) to
+// to available (>= 0) and back again.
+void check_for_hci_socket_changes(int epollfd, struct epoll_event *hci_event, int &old_hci_socket) {
+  LOG("Checks sockets. hci_socket %d and old_hci_socket %d", hci_socket, old_hci_socket);
+  if (hci_socket != old_hci_socket) {
+    LOG("hci_socket change detected");
+    if (hci_socket < 0) {
+      hci_event.data.fd = old_hci_socket;
+      LOG("hci_socket is now %d, delete old hci_socket %d from epoll", hci_socket, old_hci_socket);
+      if (epoll_ctl(epollfd, EPOLL_CTL_DEL, old_hci_socket, hci_event) != 0) {
+        LOG("epoll_ctl delete hci_socket %d failed", old_hci_socket);
+        exit(1);
+      }
+    } else {
+      old_hci_socket = hci_socket;
+      hci_event.data.fd = hci_socket;
+      LOG("hci_socket is new: %d - add to epoll set", hci_socket);
+      if (epoll_ctl(epollfd, EPOLL_CTL_ADD, hci_socket, hci_event) != 0) {
+        LOG("epoll_ctl add hci_socket %d failed", old_hci_socket);
+        exit(1);
+      }
+    }
+  }
 
 }
