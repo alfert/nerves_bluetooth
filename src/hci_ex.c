@@ -25,9 +25,9 @@
 // Function Prototypes
 void read_from_stdin();
 void process_hci_data(char *buffer, int length);
-void check_for_hci_socket_changes(int epollfd, struct epoll_event *hci_event, int &old_hci_socket);
-int process_stdin_event(struct event_poll event);
-int process_socket_event(struct event_poll event);
+void check_for_hci_socket_changes(int epollfd, int *old_hci_socket);
+int process_stdin_event(epoll_data_t event_data);
+int process_socket_event(epoll_data_t event_data);
 // Constants
 #define MAX_EVENTS 64
 
@@ -47,23 +47,17 @@ int main() {
 
   // Add stdin to epolling
   memset(&event, 0, sizeof(event));
-  event.events = EPOLLIN|EPOLLPRI|EPOLLERR;
+  event.events = EPOLLIN|EPOLLPRI|EPOLLERR | EPOLLET;
   event.data.fd = STDIN_FILENO;
   if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &event) != 0) {
       LOG("epoll_ctl add stdin failed.");
       return 1;
   }
 
-  // Add hci_socket for epolling. We declare only the variables here
-  struct epoll_event hci_event;
-  memset(&hci_event, 0, sizeof(hci_event));
-  // We use Edge triggered polling
-  hci_event.events = EPOLLIN | EPOLLET;
-
   bool finish = FALSE;
 
-  while (!FINISH) {
-    check_for_hci_socket_changes(epollfd, &hci_event, old_hci_socket);
+  while (!finish) {
+    check_for_hci_socket_changes(epollfd, &old_hci_socket);
     int number_of_events = epoll_wait(epollfd, events, MAX_EVENTS, -1);
     if (number_of_events < 0) {
       LOG("epoll_wait failed.");
@@ -72,11 +66,12 @@ int main() {
     if (number_of_events == 0) {
       continue;
     }
+    LOG("Iterating over %d epoll events", number_of_events);
     for (int i = 0; i < number_of_events; i++) {
       int processed = 0;
-      if ((processed = process_stdin_event(events[i)) < 0)
+      if ((processed = process_socket_event(events[i].data)) < 0)
         finish = TRUE;
-      if ((processed = process_socket_event(events[i)) < 0)
+      if ((processed = process_stdin_event(events[i].data)) < 0)
         finish = TRUE;
       if (processed == 0) {
         // cannot happen
@@ -91,8 +86,8 @@ int main() {
   return 0;
 }
 
-int process_stdin_event(struct event_poll event) {
-  if (event.data.fd == STDIN_FILENO) {
+int process_stdin_event(epoll_data_t event_data) {
+  if (event_data.fd == STDIN_FILENO) {
     read_from_stdin();
     if (errno != EAGAIN) {
       // no more data available on stdin: the file is closed
@@ -101,16 +96,16 @@ int process_stdin_event(struct event_poll event) {
     }
     return 1;
   }
-  else return 0;
+  return 0;
 }
 
-int process_socket_event(struct event_poll event) {
-  if (event.data.fd == hci_socket) {
+int process_socket_event(epoll_data_t event_data) {
+  if (event_data.fd == hci_socket) {
     // read from socket. 1kb should be enough
     LOG("Read event from hci_socket");
     int length = 0;
     char data[1024];
-    while(1) {
+    while (TRUE) {
       length = read(hci_socket, data, sizeof(data));
       if (length < 0 ) {
         if (errno == EAGAIN) {
@@ -122,7 +117,7 @@ int process_socket_event(struct event_poll event) {
       }
     }
   }
-  else return 0;
+  return 0;
 }
 
 void read_from_stdin() {
@@ -288,23 +283,29 @@ void process_hci_data(char *buffer, int length) {
 
 // Check for changes of the hci_socket. It may go from non-available (-1) to
 // to available (>= 0) and back again.
-void check_for_hci_socket_changes(int epollfd, struct epoll_event *hci_event, int &old_hci_socket) {
-  LOG("Checks sockets. hci_socket %d and old_hci_socket %d", hci_socket, old_hci_socket);
-  if (hci_socket != old_hci_socket) {
+void check_for_hci_socket_changes(int epollfd, int *old_hci_socket) {
+  // Add hci_socket for epolling
+  struct epoll_event hci_event;
+  memset(&hci_event, 0, sizeof(hci_event));
+  // We use Edge triggered polling
+  hci_event.events = EPOLLIN | EPOLLET;
+
+  LOG("Checks sockets. hci_socket %d and old_hci_socket %d", hci_socket, *old_hci_socket);
+  if (hci_socket != *old_hci_socket) {
     LOG("hci_socket change detected");
     if (hci_socket < 0) {
-      hci_event.data.fd = old_hci_socket;
-      LOG("hci_socket is now %d, delete old hci_socket %d from epoll", hci_socket, old_hci_socket);
-      if (epoll_ctl(epollfd, EPOLL_CTL_DEL, old_hci_socket, hci_event) != 0) {
-        LOG("epoll_ctl delete hci_socket %d failed", old_hci_socket);
+      hci_event.data.fd = *old_hci_socket;
+      LOG("hci_socket is now %d, delete old hci_socket %d from epoll", hci_socket, *old_hci_socket);
+      if (epoll_ctl(epollfd, EPOLL_CTL_DEL, *old_hci_socket, &hci_event) != 0) {
+        LOG("epoll_ctl delete hci_socket %d failed", *old_hci_socket);
         exit(1);
       }
     } else {
-      old_hci_socket = hci_socket;
+      *old_hci_socket = hci_socket;
       hci_event.data.fd = hci_socket;
       LOG("hci_socket is new: %d - add to epoll set", hci_socket);
-      if (epoll_ctl(epollfd, EPOLL_CTL_ADD, hci_socket, hci_event) != 0) {
-        LOG("epoll_ctl add hci_socket %d failed", old_hci_socket);
+      if (epoll_ctl(epollfd, EPOLL_CTL_ADD, hci_socket, &hci_event) != 0) {
+        LOG("epoll_ctl add hci_socket %d failed", *old_hci_socket);
         exit(1);
       }
     }
