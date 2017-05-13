@@ -26,6 +26,8 @@
 void read_from_stdin();
 void process_hci_data(char *buffer, int length);
 
+// Constants
+#define MAX_EVENTS 64
 
 int main() {
   LOG("\n>>>>>>>>>>>>>>>\n");
@@ -39,6 +41,7 @@ int main() {
   // Create EPOLLing socket
   int epollfd = epoll_create1(0);
   struct epoll_event event;
+  struct epoll_event *events = calloc(MAX_EVENTS, sizeof(event));
 
   // Add stdin to epolling
   memset(&event, 0, sizeof(event));
@@ -55,12 +58,16 @@ int main() {
   // We use Edge triggered polling
   hci_event.events = EPOLLIN | EPOLLET;  
 
+
   for (;;) {
       // Check for changes of the hci_socket. It may go from non-available (-1) to 
       // to available (>= 0) and back again. 
+      LOG("Checks sockets. hci_socket %d and old_hci_socket %d", hci_socket, old_hci_socket);
       if (hci_socket != old_hci_socket) {
+        LOG("hci_socket change detected");
         if (hci_socket < 0) {
           hci_event.data.fd = old_hci_socket;
+          LOG("hci_socket is now %d, delete old hci_socket %d from epoll", hci_socket, old_hci_socket);
           if (epoll_ctl(epollfd, EPOLL_CTL_DEL, old_hci_socket, &hci_event) != 0) {
             LOG("epoll_ctl delete hci_socket %d failed", old_hci_socket);
             exit(1);
@@ -68,13 +75,15 @@ int main() {
         } else {
           old_hci_socket = hci_socket;
           hci_event.data.fd = hci_socket;
+          LOG("hci_socket is new: %d - add to epoll set", hci_socket);
           if (epoll_ctl(epollfd, EPOLL_CTL_ADD, hci_socket, &hci_event) != 0) {
             LOG("epoll_ctl add hci_socket %d failed", old_hci_socket);
             exit(1);
           }
         }
       }
-      int number_of_events = epoll_wait(epollfd, &event, 1, -1);
+
+      int number_of_events = epoll_wait(epollfd, events, MAX_EVENTS, -1);
       if (number_of_events < 0) {
         LOG("epoll_wait failed.");
         return 2;
@@ -82,39 +91,44 @@ int main() {
       if (number_of_events == 0) {
         continue;
       }
-
-     if (event.data.fd == STDIN_FILENO) {
-         // read input line
-         read_from_stdin();
-         if (errno != EAGAIN) {
-           // no more data available on stdin: the file is closed
-           // therefore, we exit here.
-           break;
-         }
-      } 
-      else if (event.data.fd == hci_socket) {
-        // read from socket. 1kb should be enough
-        
-          int length = 0;
-          char data[1024];
-          while(1) {
-            length = read(hci_socket, data, sizeof(data));
-            if (length < 0 ) {
-              if (errno == EAGAIN) {
-                // no more data available. finish the loop.
-                break;
-              }
-            } else {
-              process_hci_data(data, length);
+      for (int i = 0; i < number_of_events; i++) {
+        if (events[i].data.fd == STDIN_FILENO) {
+            // read input line
+            read_from_stdin();
+            if (errno != EAGAIN) {
+              // no more data available on stdin: the file is closed
+              // therefore, we exit here.
+              break;
             }
+          } 
+          else 
+          if (events[i].data.fd == hci_socket) {
+            // read from socket. 1kb should be enough
+            LOG("Read event from hci_socket");
+            int length = 0;
+            char data[1024];
+            while(1) {
+              length = read(hci_socket, data, sizeof(data));
+              if (length < 0 ) {
+                if (errno == EAGAIN) {
+                  // no more data available. finish the loop.
+                  break;
+                }
+              } else {
+                process_hci_data(data, length);
+              }
+            }
+          } 
+          else {
+            // cannot happen™
+            LOG("Bad fd: %d\n", events[i].data.fd);
+            return 5;
           }
-     } 
-     else {
-         // cannot happen™
-         LOG("Bad fd: %d\n", event.data.fd);
-         return 5;
-     }
-  }
+  
+
+
+      }
+    }
 
   close(epollfd);
   
@@ -163,7 +177,7 @@ void read_from_stdin() {
       }
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_BIND_RAW, strlen(HCI_BIND_RAW)) == 0) {
-      LOG("found HCI_BIND_RAW");
+      LOG("found HCI_BIND_RAW for hci_socket %d", hci_socket);
       // the parameter is the first element in the list
       ETERM *param = ERL_CONS_HEAD(argp);
       int dev_id = ERL_INT_VALUE(param);
@@ -171,6 +185,7 @@ void read_from_stdin() {
       res = hci_bind_raw(&dev_id);
       if (res > -1) {
         return_val_p = erl_mk_int(res);
+        LOG("hci_socket is open with value %d", hci_socket);
       } else {
         return_val_p = erl_mk_atom("nil");
       }
