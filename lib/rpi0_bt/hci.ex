@@ -16,6 +16,10 @@ defmodule Bluetooth.HCI do
   use GenServer
   require Logger
 
+  # Constants for HCI commands etc
+  @hci_command_package_type 1
+
+
   @spec start_link() :: {:ok, pid}
   def start_link() do
     GenServer.start_link(__MODULE__, [], [name: __MODULE__])
@@ -49,6 +53,7 @@ defmodule Bluetooth.HCI do
   def hci_send_command(ogf, ocf, params) 
   when is_binary(params) and byte_size(params) < 256 and ogf < 64 and ocf < 1024 do
     package = <<
+      @hci_command_package_type  :: unsigned-integer-size(8),
       ocf :: unsigned-integer-size(10)-little,
       ogf :: unsigned-integer-size(6)-little, 
       byte_size(params) :: unsigned-integer-size(8)-little,
