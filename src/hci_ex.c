@@ -23,7 +23,7 @@
 #define HCI_SEND_COMMAND "hci_send_command"
 
 // Function Prototypes
-void read_from_stdin();
+int read_from_stdin();
 void process_hci_data(char *buffer, int length);
 void check_for_hci_socket_changes(int epollfd, int *old_hci_socket);
 int process_stdin_event(epoll_data_t event_data);
@@ -47,7 +47,7 @@ int main() {
 
   // Add stdin to epolling
   memset(&event, 0, sizeof(event));
-  event.events = EPOLLIN|EPOLLPRI|EPOLLERR | EPOLLET;
+  event.events = EPOLLIN|EPOLLPRI|EPOLLERR;
   event.data.fd = STDIN_FILENO;
   if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &event) != 0) {
       LOG("epoll_ctl add stdin failed.");
@@ -68,6 +68,7 @@ int main() {
     }
     LOG("Iterating over %d epoll events", number_of_events);
     for (int i = 0; i < number_of_events; i++) {
+      LOG("Socket No %d is %d", i, events[i].data.fd);
       int processed = 0;
       if ((processed = process_socket_event(events[i].data)) < 0)
         finish = TRUE;
@@ -87,40 +88,39 @@ int main() {
 }
 
 int process_stdin_event(epoll_data_t event_data) {
-  if (event_data.fd == STDIN_FILENO) {
-    read_from_stdin();
-    if (errno != EAGAIN) {
+  if (event_data.fd != STDIN_FILENO) return 0;
+  if (read_from_stdin() < 0) {
+    if (errno != EAGAIN && errno != EWOULDBLOCK) {
       // no more data available on stdin: the file is closed
       // therefore, we exit here.
       return -1;
+    } else {
+      return 0;
     }
-    return 1;
   }
-  return 0;
+  return 1;
 }
 
 int process_socket_event(epoll_data_t event_data) {
-  if (event_data.fd == hci_socket) {
-    // read from socket. 1kb should be enough
-    LOG("Read event from hci_socket");
-    int length = 0;
-    char data[1024];
-    while (TRUE) {
-      length = read(hci_socket, data, sizeof(data));
-      if (length < 0 ) {
-        if (errno == EAGAIN) {
-          // no more data available. finish the loop.
-          return 1;
-        }
-      } else {
-        process_hci_data(data, length);
+  if (event_data.fd != hci_socket) return 0;
+  // read from socket. 1kb should be enough
+  LOG("Read event from hci_socket");
+  int length = 0;
+  char data[1024];
+  while (TRUE) {
+    length = read(hci_socket, data, sizeof(data));
+    if (length < 0 ) {
+      if (errno == EAGAIN) {
+        // no more data available. finish the loop.
+        return 1;
       }
+    } else {
+      process_hci_data(data, length);
     }
   }
-  return 0;
 }
 
-void read_from_stdin() {
+int read_from_stdin() {
   ETERM *tuplep, *return_val_p;
   ETERM *fnp, *argp, *refp, *fun_tuple_p;
   // the array of ETERM pointer for the result
@@ -139,7 +139,8 @@ void read_from_stdin() {
    ****
    */
 
-  while ((read_count = read_cmd(buf)) > 0) {
+  // do not use a while loop, the looping occurs outside. 
+  if ((read_count = read_cmd(buf)) > 0) {
     LOG("read command successful, read %d bytes\n", read_count);
     /***************************
     * Decode the protocol between Elixir and C:
@@ -251,8 +252,13 @@ void read_from_stdin() {
     erl_free_term(return_val_p);
     erl_free_compound(result_pair);
     erl_free_term(refp);
+
+    return read_count;
   }
-  LOG("could only read %d bytes\n", read_count);
+  else {
+    LOG("could only read %d bytes\n", read_count);
+  }
+  return -1;  
 }
 
 void process_hci_data(char *buffer, int length) {
