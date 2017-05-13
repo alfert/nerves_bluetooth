@@ -169,58 +169,21 @@ int hci_bind_raw(int *dev_id) {
 }
 
 int hci_write(byte *data, int size) {
-  struct sockaddr_hci a;
-  struct iovec iv[3];
-  int ivn;
-  uint8_t type = HCI_COMMAND_PKT;  
-
-  // SOCK__CLOEXEC enables event polling via epoll
-  int write_socket = socket(AF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC, BTPROTO_HCI);
-                     
-  if (write_socket < 0) {
-    int error = errno;
-    LOG("Creating the write socket failed: %d (%s)", error, strerror(error));
-    return error;
+  if (hci_socket < 0) {
+    return ENOTCONN;
   }
-  
-  /* Bind socket to the HCI device */
-  memset(&a, 0, sizeof(a));
-  a.hci_family = AF_BLUETOOTH;
-  a.hci_dev = _dev_id;
-  if (bind(write_socket, (struct sockaddr *) &a, sizeof(a)) < 0) {
-    int error = errno;
-    LOG("Binding the write_socket failed: %d (%s)", error, strerror(error));
-    hci_close(write_socket);
-    return error;
-  }
-    
-  LOG("write %d bytes to write_socket %d", size, write_socket);
-  if (size < 1)
+  if (size < 1) {
     return 0;
-
-  iv[0].iov_base = &type;
-	iv[0].iov_len  = 1;
-	iv[1].iov_base = data;
-	iv[1].iov_len  = size;
-	ivn = 2;
-
-  while (writev(write_socket, iv, ivn) < 0) {
-		if (errno == EAGAIN || errno == EINTR)
-			continue;
-		// failure
-    hci_close(write_socket);
-    return errno;
-	}
-/*
+  }
   int counter = 0;
   while (counter < size) {
-    int result = write(write_socket, data+counter, size - counter);
+    int result = write(hci_socket, data+counter, size - counter);
     if (result < 0) {
       if ((errno == EAGAIN || errno == EINTR)) 
         // try again
         continue;
       else { // failure
-        hci_close(write_socket);
+        hci_close(hci_socket);
         return errno;
       } 
     }
@@ -228,8 +191,6 @@ int hci_write(byte *data, int size) {
       counter += result;
     }
   }
-  */
-  hci_close(write_socket);
   return 0;
 }
 
