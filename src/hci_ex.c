@@ -196,6 +196,21 @@ int read_from_stdin() {
       }
       erl_free_term(param);
     }
+    else if (strncmp(ERL_ATOM_PTR(fnp), HCI_SET_FILTER, strlen(HCI_SET_FILTER)) == 0) {
+      LOG("found HCI_SET_FILTER");
+      // the parameter is the first element in the list
+      ETERM *param = ERL_CONS_HEAD(argp);
+      byte *data = ERL_BIN_PTR(param);
+      int size = ERL_BIN_SIZE(param);
+
+      res = hci_set_filter(data, size);
+      if (res == 0) {
+        return_val_p = erl_mk_atom("ok");
+      } else {
+        return_val_p = erl_mk_atom(strerror(res));
+      }
+      erl_free_term(param);
+    }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_DEV_ID_FOR, strlen(HCI_DEV_ID_FOR)) == 0) {
       // int device_id = -1; // currently no used.
       bool is_up = false;

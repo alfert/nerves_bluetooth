@@ -47,6 +47,11 @@ int hci_bind_raw(int *dev_id);
  */
 int hci_write(byte *data, int size);
 
+/* int hci_set_filter(byte *data, int size)
+ * Set the filter for events propagation
+*/
+int hci_set_filter(byte *data, int size);
+
 /* Testing function, from the tutorial */
 int hci_foo(int x);
 

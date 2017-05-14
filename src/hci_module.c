@@ -21,6 +21,8 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/hci_lib.h>
+
 // we do not include hci_lib.h, because the functions defined there are
 // implemented in Elixir instead.
 
@@ -175,6 +177,18 @@ int hci_write(byte *data, int size) {
   if (size < 1) {
     return 0;
   }
+
+  // Set the event filter for answer, taken from cmd_cmd from hcitool.c
+  struct hci_filter flt;
+	hci_filter_clear(&flt);
+	hci_filter_set_ptype(HCI_EVENT_PKT, &flt);
+	hci_filter_all_events(&flt);
+	if (setsockopt(hci_socket, SOL_HCI, HCI_FILTER, &flt, sizeof(flt)) < 0) {
+    int error = errno;
+		LOG("HCI filter setup failed: %d (%s)", error, strerror(error));
+		exit(-1);
+	}
+  
   int counter = 0;
   while (counter < size) {
     int result = write(hci_socket, data+counter, size - counter);
@@ -191,9 +205,19 @@ int hci_write(byte *data, int size) {
       counter += result;
     }
   }
+  
   return 0;
 }
 
+
+int hci_set_filter(byte *data, int size) {
+  if (setsockopt(hci_socket, SOL_HCI, HCI_FILTER, data, size) < 0) {
+    int error = errno;
+    LOG("setsockopts failed with: %d (%s)", error, strerror(error));
+    return error;
+  }
+  return 0;
+}
 /** Simple test function */
 int hci_foo(int x) {
   return x+1;
