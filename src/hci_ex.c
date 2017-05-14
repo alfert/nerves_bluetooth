@@ -21,13 +21,15 @@
 #define HCI_DEV_ID_FOR "hci_dev_id_for"
 #define HCI_BIND_RAW "hci_bind_raw"
 #define HCI_SEND_COMMAND "hci_send_command"
+#define HCI_SET_FILTER "hci_set_filter"
 
 // Function Prototypes
 int read_from_stdin();
 void process_hci_data(char *buffer, int length);
 void check_for_hci_socket_changes(int epollfd, int *old_hci_socket);
-int process_stdin_event(epoll_data_t event_data);
-int process_socket_event(epoll_data_t event_data);
+int process_stdin_event();
+//int process_socket_event();
+
 // Constants
 #define MAX_EVENTS 64
 
@@ -69,15 +71,20 @@ int main() {
     LOG("Iterating over %d epoll events", number_of_events);
     for (int i = 0; i < number_of_events; i++) {
       LOG("Socket No %d is %d", i, events[i].data.fd);
-      int processed = 0;
-      if ((processed = process_socket_event(events[i].data)) < 0)
-        finish = TRUE;
-      if ((processed = process_stdin_event(events[i].data)) < 0)
-        finish = TRUE;
-      if (processed == 0) {
-        // cannot happen
-        LOG("Bad fd: %d\n", events[i].data.fd);
-        return 5;
+      switch(events[i].data.fd) {
+        case 0: 
+          if (process_stdin_event() < 0)
+            finish = TRUE;
+          break;
+        default:
+          if (events[i].data.fd == hci_socket) {
+            if (process_socket_event() < 0)
+              finish = TRUE;
+          }
+          else {
+            LOG("Bad fd: %d\n", events[i].data.fd);
+            return 5;
+          }
       }
     }
   }
@@ -87,8 +94,7 @@ int main() {
   return 0;
 }
 
-int process_stdin_event(epoll_data_t event_data) {
-  if (event_data.fd != STDIN_FILENO) return 0;
+int process_stdin_event(void) {
   if (read_from_stdin() < 0) {
     if (errno != EAGAIN && errno != EWOULDBLOCK) {
       // no more data available on stdin: the file is closed
@@ -101,8 +107,7 @@ int process_stdin_event(epoll_data_t event_data) {
   return 1;
 }
 
-int process_socket_event(epoll_data_t event_data) {
-  if (event_data.fd != hci_socket) return 0;
+int process_socket_event(void) {
   // read from socket. 1kb should be enough
   LOG("Read event from hci_socket");
   int length = 0;
