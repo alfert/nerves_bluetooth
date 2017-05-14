@@ -49,18 +49,29 @@ defmodule Bluetooth.HCI do
   def hci_send_command(message) when is_binary(message) do
     GenServer.call(__MODULE__, {:hci_send_command, [message]})
   end
-  #def hci_send_command(<<ogf :: unsigned-integer-size(6)>>, <<ocf :: unsigned-integer-size(10)>>, params) 
   def hci_send_command(ogf, ocf, params) 
   when is_binary(params) and byte_size(params) < 256 and ogf < 64 and ocf < 1024 do
-    package = <<
-      @hci_command_package_type  :: unsigned-integer-size(8),
-      ocf :: unsigned-integer-size(10)-little,
-      ogf :: unsigned-integer-size(6)-little, 
-      byte_size(params) :: unsigned-integer-size(8)-little,
-      params :: binary>>
+    package = create_command(ogf, ocf, params)
     hci_send_command(package)
   end  
   
+  def create_command(ogf, ocf, params) 
+  when is_binary(params) and byte_size(params) < 256 and ogf < 64 and ocf < 1024 do
+    opcode_bin = << 
+      ogf :: unsigned-integer-size(6),
+      ocf :: unsigned-integer-size(10)
+    >>
+    Logger.debug "opcode: #{inspect opcode_bin}"
+    <<opcode :: unsigned-integer-size(16)>> = opcode_bin
+    package = <<
+      @hci_command_package_type  :: unsigned-integer-size(8),
+      opcode :: unsigned-integer-size(16)-little,  
+      byte_size(params) :: unsigned-integer-size(8)-little,
+      params :: binary>>
+    Logger.debug "Package is: #{inspect package}"
+    package
+  end
+
   def foo(x) do
     GenServer.call(__MODULE__, {:foo, [x]})
   end

@@ -18,15 +18,29 @@ defmodule Bluetooth.Test.HCIPort do
     {:ok, %{hci: hci}}
   end
 
+  
   test  "Send a command", %{hci: hci} do
     assert :ok == HCI.hci_init()
     assert true == HCI.hci_is_dev_up()
     assert 0 == HCI.hci_bind_raw(0);
+    # assert 0 == HCI.set_filter();
     # this is the Read Local Version Information Command
     assert :ok == HCI.hci_send_command(0x04, 0x01, <<>>)
+    Process.sleep(500)
   end
   
-
+  test "command package generation" do
+    ogf = 4
+    ocf = 1
+    # opcode:  01234567 89ABCDEF
+    # ocf      10000000 00
+    # ogf                 001000
+    # bytes:   0x01     0x04
+    assert 0o377 == 0xff
+    assert 0o20 == 0x10
+    assert <<0x01, 0x01, 0o20, 0x00>> == HCI.create_command(ogf, ocf, <<>>)
+  end
+  
   test "Bind the socket", %{hci: hci} do
     assert :ok == HCI.hci_init()
     assert true == HCI.hci_is_dev_up()
