@@ -19,7 +19,19 @@ defmodule Bluetooth.HCI do
   # Constants for HCI commands etc
   @hci_command_package_type 1
 
+  @type hci_event_code_t :: :hci_async_event | :hci_command_complete_event |
+    {:hci_unknown_event, pos_integer}
 
+  defmodule Event do
+    @moduledoc "Struct for a HCI event"
+    @type t :: %__MODULE__{
+      event: atom,
+      op_code: atom,
+      parameter: binary
+    }
+    defstruct [event: nil, op_code: nil, parameter: ""]
+  end
+  
   @spec start_link() :: {:ok, pid}
   def start_link() do
     GenServer.start_link(__MODULE__, [], [name: __MODULE__])
@@ -71,6 +83,19 @@ defmodule Bluetooth.HCI do
     Logger.debug "Package is: #{inspect package}"
     package
   end
+
+  def interprete_event(<<opcode :: unsigned-integer-size(8), 
+      event :: unsigned-integer-size(8), 
+      len :: unsigned-integer-size(8), 
+      rest :: binary>>) when len == byte_size(rest), 
+    do:  %Event{event: event_code(event), op_code: opcode, parameter: rest}
+  
+  @doc """
+  Partial mapping of event code to their atom counterpart
+  """
+  def event_code(0x00), do: :hci_async_event
+  def event_code(0x0e), do: :hci_command_complete_event
+  def event_code(ev_code), do: {:hci_unknown_event, ev_code}
 
   def foo(x) do
     GenServer.call(__MODULE__, {:foo, [x]})
