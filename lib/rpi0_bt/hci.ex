@@ -1,14 +1,14 @@
 defmodule Bluetooth.HCI do
   @moduledoc """
-  HCI interface implemented as a port. 
+  HCI interface implemented as a port.
 
   ## Port Protocol
 
   The functions are encoded as a tuple with the function name as `atom` and the parameters as an
   (possibly empty) list. All Port functions are prefixed with `hci_`. The call of function `foo(x)`
-  would thus transferred as `{:hci_foo, [x]}`. Since the port communication is asynchronous by 
-  nature and to prevent locks inside the gen server, we use an asynchronous reply and remember 
-  pending calls inside the gen server. To identify a pending call, a `reference` is created and 
+  would thus transferred as `{:hci_foo, [x]}`. Since the port communication is asynchronous by
+  nature and to prevent locks inside the gen server, we use an asynchronous reply and remember
+  pending calls inside the gen server. To identify a pending call, a `reference` is created and
   passed to the port. Every replying message must contain this reference. Therefore the message
   send to the port is `{ref, {:hci_foo, [x]}}` and the answer is `{ref, return_val}`.
   """
@@ -18,6 +18,7 @@ defmodule Bluetooth.HCI do
 
   # Constants for HCI commands etc
   @hci_command_package_type 1
+  @hci_event_package_type 4
 
   @type hci_event_code_t :: :hci_async_event | :hci_command_complete_event |
     {:hci_unknown_event, pos_integer}
@@ -26,12 +27,11 @@ defmodule Bluetooth.HCI do
     @moduledoc "Struct for a HCI event"
     @type t :: %__MODULE__{
       event: atom,
-      op_code: atom,
       parameter: binary
     }
-    defstruct [event: nil, op_code: nil, parameter: ""]
+    defstruct [event: nil, parameter: ""]
   end
-  
+
   @spec start_link() :: {:ok, pid}
   def start_link() do
     GenServer.start_link(__MODULE__, [], [name: __MODULE__])
@@ -56,20 +56,20 @@ defmodule Bluetooth.HCI do
   def hci_bind_raw(dev_id) do
     GenServer.call(__MODULE__, {:hci_bind_raw, [dev_id]})
   end
-  
+
   @spec hci_send_command(binary) :: :ok
   def hci_send_command(message) when is_binary(message) do
     GenServer.call(__MODULE__, {:hci_send_command, [message]})
   end
-  def hci_send_command(ogf, ocf, params) 
+  def hci_send_command(ogf, ocf, params)
   when is_binary(params) and byte_size(params) < 256 and ogf < 64 and ocf < 1024 do
     package = create_command(ogf, ocf, params)
     hci_send_command(package)
-  end  
-  
-  def create_command(ogf, ocf, params) 
+  end
+
+  def create_command(ogf, ocf, params)
   when is_binary(params) and byte_size(params) < 256 and ogf < 64 and ocf < 1024 do
-    opcode_bin = << 
+    opcode_bin = <<
       ogf :: unsigned-integer-size(6),
       ocf :: unsigned-integer-size(10)
     >>
@@ -77,19 +77,19 @@ defmodule Bluetooth.HCI do
     <<opcode :: unsigned-integer-size(16)>> = opcode_bin
     package = <<
       @hci_command_package_type  :: unsigned-integer-size(8),
-      opcode :: unsigned-integer-size(16)-little,  
+      opcode :: unsigned-integer-size(16)-little,
       byte_size(params) :: unsigned-integer-size(8)-little,
       params :: binary>>
     Logger.debug "Package is: #{inspect package}"
     package
   end
 
-  def interprete_event(<<opcode :: unsigned-integer-size(8), 
-      event :: unsigned-integer-size(8), 
-      len :: unsigned-integer-size(8), 
-      rest :: binary>>) when len == byte_size(rest), 
-    do:  %Event{event: event_code(event), op_code: opcode, parameter: rest}
-  
+  def interprete_event(<<@hci_event_package_type :: unsigned-integer-size(8),
+      event :: unsigned-integer-size(8),
+      len :: unsigned-integer-size(8),
+      rest :: binary>>) when len == byte_size(rest),
+    do:  %Event{event: event_code(event), parameter: rest}
+
   @doc """
   Partial mapping of event code to their atom counterpart
   """
@@ -100,6 +100,12 @@ defmodule Bluetooth.HCI do
   def foo(x) do
     GenServer.call(__MODULE__, {:foo, [x]})
   end
+
+  ###################################################################
+  #
+  # GenServer Callbacks
+  #
+  ###################################################################
 
   def stop() do
     GenServer.stop(__MODULE__, :normal)
@@ -124,9 +130,9 @@ defmodule Bluetooth.HCI do
     {:ok, state}
   end
 
-  # define a generic encoding and handling, it is not required to 
+  # define a generic encoding and handling, it is not required to
   # differentiate between number of params here!
-  def handle_call({func, args} = msg, from, s = %__MODULE__{port: port, calls: c}) 
+  def handle_call({func, args} = msg, from, s = %__MODULE__{port: port, calls: c})
       when is_atom(func) and is_list(args) and is_port(port) do
     Logger.debug "Call to #{inspect func} and state #{inspect s}"
     # send a message to the port
@@ -148,9 +154,9 @@ defmodule Bluetooth.HCI do
         end
         # send the answer to the original caller
         GenServer.reply(caller, return_value)
-        # remove that pending call from map of pending calls
+        # remove that pending call from the map of pending calls
         %__MODULE__{state | calls: Map.delete(calls, ref)}
-      {:event, event_bin} when is_binary(event_bin) -> 
+      {:event, event_bin} when is_binary(event_bin) ->
         event = interprete_event(event_bin)
         Logger.debug "Received event #{inspect event}"
         Logger.error "Do not know what to do with the event!"
