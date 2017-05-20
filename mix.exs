@@ -15,8 +15,7 @@ defmodule Rpi0Bt.Mixfile do
      archives: [nerves_bootstrap: "~> 0.3.0"],
      compilers: [:elixir_make] ++ Mix.compilers,
      make_clean: ["clean"],
-     make_env: %{"ERL_INTERFACE" => :code.lib_dir(:erl_interface) |> :binary.list_to_bin(), 
-                 "EXTRA_CFLAGS" => "-DDEBUG"},
+     make_env: %{"EXTRA_CFLAGS" => "-DDEBUG"},
      deps_path: "deps/#{@target}",
      build_path: "_build/#{@target}",
      build_embedded: Mix.env == :prod,
@@ -67,6 +66,7 @@ defmodule Rpi0Bt.Mixfile do
   # Specify target specific dependencies
   def deps("host"), do: []
   def deps("rpi0") do
+    Mix.shell.info([:green, "deps for rpi0"])
     [{:nerves_runtime, "~> 0.1.0"},
      {:"nerves_system_rpi0", "~> 0.13.0-dev", path: "../nerves-sources/nerves_system_rpi0",
         runtime: false},
@@ -74,7 +74,7 @@ defmodule Rpi0Bt.Mixfile do
    end
   def deps(target) do
     [{:nerves_runtime, "~> 0.1.0"},
-     {:"nerves_system_#{target}", "~> 0.11.0", runtime: false},
+     {:"nerves_system_#{target}", "~> 0.12.0", runtime: false},
      {:nerves_interim_wifi, "~> 0.2.0"}]
   end
 
