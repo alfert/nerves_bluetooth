@@ -150,6 +150,10 @@ defmodule Bluetooth.HCI do
         GenServer.reply(caller, return_value)
         # remove that pending call from map of pending calls
         %__MODULE__{state | calls: Map.delete(calls, ref)}
+      {:event, event_bin} when is_binary(event_bin) -> 
+        event = interprete_event(event_bin)
+        Logger.debug "Received event #{inspect event}"
+        Logger.error "Do not know what to do with the event!"
       # _ -> state
     end
     {:noreply, new_state}
