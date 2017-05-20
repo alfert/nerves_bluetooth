@@ -2,6 +2,7 @@ defmodule Bluetooth.Test.HCIPort do
   use ExUnit.Case
 
   alias Bluetooth.HCI
+  alias Bluetooth.HCI.Event
   require Logger
 
   setup do
@@ -18,6 +19,13 @@ defmodule Bluetooth.Test.HCIPort do
     {:ok, %{hci: hci}}
   end
 
+  test "interprete command complete event" do
+    # result of Read Local Version Information Command
+    event_bin = <<4, 14, 12, 1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>
+    event = HCI.interprete_event(event_bin)
+    assert %Event{event: :hci_command_complete_event, parameter: params} = event
+    assert params = <<1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>
+  end
   
   test  "Send a command", %{hci: hci} do
     assert :ok == HCI.hci_init()
