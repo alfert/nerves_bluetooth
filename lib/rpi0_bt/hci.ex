@@ -120,9 +120,17 @@ defmodule Bluetooth.HCI do
   def init([]) do
     Process.flag(:trap_exit, true)
     bin_dir = Application.app_dir(:rpi0_bt, "priv")
-    exec = Path.join(bin_dir, "hci_ex")
-    port = case Port.open({:spawn_executable, exec}, [{:packet, 2}, :use_stdio, :binary]) do
-      p  when is_port(p) -> p
+    hci = Path.join(bin_dir, "hci_ex")
+    {exec, args} = if Application.get_env(:rpi0_bt, :debug) do
+      strace = "/usr/bin/strace"
+      args = ["-o", "hci_ex.strace", hci]
+      {strace, args}
+    else
+      {hci, []}
+    end
+      
+    port = case Port.open({:spawn_executable, exec}, [{:args, args}, {:packet, 2}, :use_stdio, :binary]) do
+      p when is_port(p) -> p
     end
     Logger.debug "Port is #{inspect port}"
     state = %__MODULE__{port: port}
