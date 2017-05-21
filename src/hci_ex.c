@@ -28,7 +28,7 @@ int read_from_stdin();
 void process_hci_data(char *buffer, int length);
 void check_for_hci_socket_changes(int epollfd, int *old_hci_socket);
 int process_stdin_event();
-//int process_socket_event();
+int process_socket_event();
 
 // Constants
 #define MAX_EVENTS 64
