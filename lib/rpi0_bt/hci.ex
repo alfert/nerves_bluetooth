@@ -57,6 +57,20 @@ defmodule Bluetooth.HCI do
     GenServer.call(__MODULE__, {:hci_bind_raw, [dev_id]})
   end
 
+  def hci_set_filter(data \\ default_filter()) do
+    GenServer.call(__MODULE__, {:hci_set_filter, [data]})
+  end
+
+  @doc "Sets the package type to EVENT and allows all event types"
+  def default_filter() do
+    <<@hci_event_package_type :: size(32)-unsigned-integer,
+      0xff, 0xff, 0xff, 0xff, 
+      0xff, 0xff, 0xff, 0xff,
+      0x00, 0x00, 0x00, 0x00>>
+  end
+  
+  
+
   @spec hci_send_command(binary) :: :ok
   def hci_send_command(message) when is_binary(message) do
     GenServer.call(__MODULE__, {:hci_send_command, [message]})
