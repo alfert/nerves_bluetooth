@@ -19,6 +19,20 @@ defmodule Bluetooth.Test.HCIPort do
     {:ok, %{hci: hci}}
   end
 
+ test  "Send a command and receive an event", %{hci: hci} do
+    assert :ok == HCI.hci_init()
+    assert true == HCI.hci_is_dev_up()
+    assert 0 == HCI.hci_bind_raw(0);
+    assert :ok == HCI.hci_set_filter();
+    # this is the Read Local Version Information Command
+    assert :ok == HCI.hci_send_command(0x04, 0x01, <<>>)
+    Process.sleep(500)
+    event = HCI.receive_event()
+    assert %Event{event: :hci_command_complete_event, parameter: params} = event
+    assert params = <<1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>
+  end
+
+
   test "interprete command complete event" do
     # result of Read Local Version Information Command
     event_bin = <<4, 14, 12, 1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>
@@ -34,7 +48,6 @@ defmodule Bluetooth.Test.HCIPort do
     # assert 0 == HCI.set_filter();
     # this is the Read Local Version Information Command
     assert :ok == HCI.hci_send_command(0x04, 0x01, <<>>)
-    Process.sleep(500)
   end
 
   test "command package generation" do
