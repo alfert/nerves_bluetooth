@@ -52,14 +52,13 @@ defmodule Rpi0Bt.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   def deps do
-    [{:nerves, "~> 0.5.0", runtime: false}] ++
-     [
+    [{:nerves, "~> 0.5.0", runtime: false},
       # {:nerves, "~> 0.5.0", runtime: false, path: "../nerves-sources/nerves",
       #     override: true},
      {:elixir_make, "~> 0.3", runtime: false},
     #  {:logger_file_backend, "~> 0.0.9"},
      {:uuid, "~> 1.1"}, 
-     {:credo, "~> 0.7"}
+     {:credo, "~> 0.7", only: [:dev, :test]}
     ] ++
     deps(@target)
   end
