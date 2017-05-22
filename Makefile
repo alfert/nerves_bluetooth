@@ -25,7 +25,7 @@ ifeq ($(CROSSCOMPILE),)
 DEFAULT_TARGETS = priv
     endif
 endif
-
+DEFAULT_TARGETS ?= priv priv/hci_ex
 
 # Look for the EI library and header files
 # For crosscompiled builds, ERL_EI_INCLUDE_DIR and ERL_EI_LIBDIR must be
@@ -67,15 +67,17 @@ endif
 
 .PHONY: all clean
 
-all: priv/hci_ex
+all: $(DEFAULT_TARGETS)
 
 %.o: %.c
 	env | sort
 	$(CC) -c $(HCI_DEFINES) $(CFLAGS) -o $@ $<
 
+priv:
+	@mkdir -p priv
+
 # priv/wpa_ex: src/wpa_ex.o src/wpa_ctrl/os_unix.o src/wpa_ctrl/wpa_ctrl.o
 priv/hci_ex: src/hci_ex.o src/hci_module.o src/hci_interface.o
-	@mkdir -p priv
 	$(CC) $^ $(LDFLAGS) -o $@
 
 clean:
