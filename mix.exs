@@ -58,7 +58,8 @@ defmodule Rpi0Bt.Mixfile do
       #     override: true},
      {:elixir_make, "~> 0.3", runtime: false},
     #  {:logger_file_backend, "~> 0.0.9"},
-     {:uuid, "~> 1.1"}
+     {:uuid, "~> 1.1"}, 
+     {:credo, "~> 0.7"}
     ] ++
     deps(@target)
   end
