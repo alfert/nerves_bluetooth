@@ -65,12 +65,15 @@ defmodule Bluetooth.HCI do
   @doc "Sets the package type to EVENT and allows all event types"
   def default_filter() do
     <<@hci_event_package_type :: size(32)-unsigned-integer,
-      0xff, 0xff, 0xff, 0xff, 
+      0xff, 0xff, 0xff, 0xff,
       0xff, 0xff, 0xff, 0xff,
       0x00, 0x00, 0x00, 0x00>>
   end
-  
-  
+
+  def hci_receive(timeout \\ 5_000) do
+    GenServer.call(__MODULE__, {:hci_recieve, [timeout]})
+  end
+
 
   @spec hci_send_command(binary) :: :ok
   def hci_send_command(message) when is_binary(message) do
@@ -128,9 +131,12 @@ defmodule Bluetooth.HCI do
 
   @type t :: %__MODULE__{
     port: nil | port,
-    calls: %{required(reference) => any}
+    calls: %{required(reference) => any},
+    messages: :: :queue.t,
+    receiver: :: nil | pid,
+    timer: :: nil | ref
   }
-  defstruct [port: nil, calls: %{}]
+  defstruct [port: nil, calls: %{}, messages: :queue.new(), receiver: nil, timer: nil]
 
   def init([]) do
     Process.flag(:trap_exit, true)
@@ -143,7 +149,7 @@ defmodule Bluetooth.HCI do
     else
       {hci, []}
     end
-      
+
     port = case Port.open({:spawn_executable, exec}, [{:args, args}, {:packet, 2}, :use_stdio, :binary]) do
       p when is_port(p) -> p
     end
@@ -153,6 +159,19 @@ defmodule Bluetooth.HCI do
     {:ok, state}
   end
 
+  def handle_call({:hci_receive, [timeout]}, from, s = %__MODULE__{messages: q, receiver: nil}) do
+    case :queue.out(q) do
+      {:empty, ^q} ->
+        # set a timer to timeout to wait for a reply
+        ref = Process.send_after(self, {:receive_timeout, from}, timeout)
+        # return a noreply message
+        {:noreply, %__MODULE__{s | receiver: from, timer: ref}}
+        # if a package arrives and a timer is running, abort the timer
+        # and send a reply
+      {message, new_q} ->
+        {:reply, message, %__MODULE__{s | messages: new_q}}
+    end
+  end
   # define a generic encoding and handling, it is not required to
   # differentiate between number of params here!
   def handle_call({func, args} = msg, from, s = %__MODULE__{port: port, calls: c})
@@ -182,10 +201,24 @@ defmodule Bluetooth.HCI do
       {:event, event_bin} when is_binary(event_bin) ->
         event = interprete_event(event_bin)
         Logger.debug "Received event #{inspect event}"
-        Logger.error "Do not know what to do with the event!"
+        if state.receiver == nil do
+          # enqueue the event
+          new_q = :queue.in(state.messages, event)
+          %__MODULE__{state | messages: new_q}
+        else
+          # send the event directly to the waiting process
+          Process.cancel_timer(state.timer)
+          GenServer.reply(state.receiver, {:ok, event})
+          %__MODULE__{state | timer: nil, receiver: nil}
+        end
       # _ -> state
     end
     {:noreply, new_state}
+  end
+  def handle_info({:receive_timeout, from}, state) do
+    # write a handle_info for the timeout
+    GenServer.reply(from, {:error, :timeout})
+    {:noreply, %__MODULE__{state | receiver: nil, timer: nil}}
   end
   def handle_info({:EXIT, port, :normal}, state) do
     {:stop, :normal, %__MODULE__{state | port: nil}}
