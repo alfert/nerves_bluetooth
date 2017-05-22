@@ -70,7 +70,7 @@ defmodule Rpi0Bt.Mixfile do
     Mix.shell.info([:green, "deps for rpi0"])
     [{:nerves_runtime, "~> 0.1.0"},
      {:"nerves_system_rpi0", "~> 0.13.0-dev", path: "../nerves-sources/nerves_system_rpi0",
-        runtime: false},
+        runtime: false, env: :dev},
       {:nerves_interim_wifi, "~> 0.2.0"}]
    end
   def deps(target) do
