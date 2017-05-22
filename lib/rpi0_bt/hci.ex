@@ -57,6 +57,7 @@ defmodule Bluetooth.HCI do
     GenServer.call(__MODULE__, {:hci_bind_raw, [dev_id]})
   end
 
+  @spec hci_set_filter(binary) :: :ok | {:error, any}
   def hci_set_filter(data \\ default_filter()) do
     GenServer.call(__MODULE__, {:hci_set_filter, [data]})
   end
