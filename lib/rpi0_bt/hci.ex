@@ -70,7 +70,8 @@ defmodule Bluetooth.HCI do
       0x00, 0x00, 0x00, 0x00>>
   end
 
-  def hci_receive(timeout \\ 5_000) do
+  @spec hci_receive(non_neg_integer) :: {:ok, any} | {:error, any}
+  def hci_receive(timeout \\ 5_000) when is_integer(timeout) and timeout >= 0 do
     GenServer.call(__MODULE__, {:hci_recieve, [timeout]})
   end
 
@@ -132,9 +133,9 @@ defmodule Bluetooth.HCI do
   @type t :: %__MODULE__{
     port: nil | port,
     calls: %{required(reference) => any},
-    messages: :: :queue.t,
-    receiver: :: nil | pid,
-    timer: :: nil | ref
+    messages: :queue.t,
+    receiver: nil | pid,
+    timer:  nil | reference
   }
   defstruct [port: nil, calls: %{}, messages: :queue.new(), receiver: nil, timer: nil]
 
@@ -163,7 +164,7 @@ defmodule Bluetooth.HCI do
     case :queue.out(q) do
       {:empty, ^q} ->
         # set a timer to timeout to wait for a reply
-        ref = Process.send_after(self, {:receive_timeout, from}, timeout)
+        ref = Process.send_after(self(), {:receive_timeout, from}, timeout)
         # return a noreply message
         {:noreply, %__MODULE__{s | receiver: from, timer: ref}}
         # if a package arrives and a timer is running, abort the timer
@@ -185,32 +186,11 @@ defmodule Bluetooth.HCI do
     {:noreply, %__MODULE__{s | calls: Map.put(c, ref, from)}}
   end
 
-  def handle_info({port, {:data, msg}}, state = %__MODULE__{calls: calls}) do
+  def handle_info({_port, {:data, msg}}, state) do
     # Logger.error "Unknown message from port: #{inspect msg}"
     new_state = case :erlang.binary_to_term(msg) do
-      {ref, return_value} when is_reference(ref) ->
-        # find the caller of the original call to the port
-        caller = case Map.get(calls, ref) do
-          nil -> "Unknown reference #{inspect ref}"
-          pid -> pid
-        end
-        # send the answer to the original caller
-        GenServer.reply(caller, return_value)
-        # remove that pending call from the map of pending calls
-        %__MODULE__{state | calls: Map.delete(calls, ref)}
-      {:event, event_bin} when is_binary(event_bin) ->
-        event = interprete_event(event_bin)
-        Logger.debug "Received event #{inspect event}"
-        if state.receiver == nil do
-          # enqueue the event
-          new_q = :queue.in(state.messages, event)
-          %__MODULE__{state | messages: new_q}
-        else
-          # send the event directly to the waiting process
-          Process.cancel_timer(state.timer)
-          GenServer.reply(state.receiver, {:ok, event})
-          %__MODULE__{state | timer: nil, receiver: nil}
-        end
+      {:event, event_bin} -> do_handle_event(event_bin, state)
+      {ref, return_value} -> do_handle_return_value(ref, return_value, state)
       # _ -> state
     end
     {:noreply, new_state}
@@ -220,24 +200,51 @@ defmodule Bluetooth.HCI do
     GenServer.reply(from, {:error, :timeout})
     {:noreply, %__MODULE__{state | receiver: nil, timer: nil}}
   end
-  def handle_info({:EXIT, port, :normal}, state) do
+  def handle_info({:EXIT, _port, :normal}, state) do
     {:stop, :normal, %__MODULE__{state | port: nil}}
   end
-  def handle_info({port, :closed}, state= %__MODULE__{port: port}) do
+  def handle_info({_port, :closed}, _state= %__MODULE__{}) do
     # Port acknowledges the close command
     {:stop, :normal, %__MODULE__{port: nil, calls: %{}}}
   end
 
-  def terminate(reason, state= %__MODULE__{port: nil}) do
+  def terminate(reason, _state = %__MODULE__{port: nil}) do
     Logger.debug("HCI is shutting down for reason: #{inspect reason} and port=nil")
     :ok
   end
-  def terminate(reason, state= %__MODULE__{port: port}) do
+  def terminate(reason, _state = %__MODULE__{port: port}) do
     Logger.debug("HCI is shutting down for reason: #{inspect reason}")
     # kill the port
     Port.close(port)
     :ok
   end
 
+  def do_handle_return_value(ref, return_value, state = %__MODULE__{calls: calls}) when
+  is_reference(ref) do
+    # find the caller of the original call to the port
+    caller = case Map.get(calls, ref) do
+      nil -> "Unknown reference #{inspect ref}"
+      pid -> pid
+    end
+    # send the answer to the original caller
+    GenServer.reply(caller, return_value)
+    # remove that pending call from the map of pending calls
+    %__MODULE__{state | calls: Map.delete(calls, ref)}
+  end
+
+  def do_handle_event(event_bin, state = %__MODULE__{messages: q, receiver: receiver}) do
+    event = interprete_event(event_bin)
+    Logger.debug "Received event #{inspect event}"
+    if receiver == nil do
+      # enqueue the event
+      new_q = :queue.in(q, event)
+      %__MODULE__{state | messages: new_q}
+    else
+      # send the event directly to the waiting process
+      Process.cancel_timer(state.timer)
+      GenServer.reply(state.receiver, {:ok, event})
+      %__MODULE__{state | timer: nil, receiver: nil}
+    end
+  end
 
 end
