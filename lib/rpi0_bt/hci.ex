@@ -36,7 +36,14 @@ defmodule Bluetooth.HCI do
   def start_link() do
     GenServer.start_link(__MODULE__, [], [name: __MODULE__])
   end
-
+  @doc """
+  For testing purposes: A port is not started and `pid` is
+  an emulator of the regular port.
+  """
+  @spec start_link(pid) :: {:ok, pid}
+  def start_link(pid) when is_pid(pid) do
+    GenServer.start_link(__MODULE__, [pid], [name: __MODULE__])
+  end
   @spec hci_init() :: :ok | {:error, any}
   def hci_init() do
     GenServer.call(__MODULE__, {:hci_init, []})
@@ -72,7 +79,7 @@ defmodule Bluetooth.HCI do
 
   @spec hci_receive(non_neg_integer) :: {:ok, any} | {:error, any}
   def hci_receive(timeout \\ 5_000) when is_integer(timeout) and timeout >= 0 do
-    GenServer.call(__MODULE__, {:hci_recieve, [timeout]})
+    GenServer.call(__MODULE__, {:hci_receive, [timeout]})
   end
 
 
@@ -159,6 +166,12 @@ defmodule Bluetooth.HCI do
     Logger.debug "State will be #{inspect state}"
     {:ok, state}
   end
+  def init([pid]) when is_pid(pid) do
+    Logger.debug("HCI.init with emulator pid #{inspect pid}")
+    state = %__MODULE__{port: pid}
+    Logger.debug "State will be #{inspect state}"
+    {:ok, state}
+  end
 
   def handle_call({:hci_receive, [timeout]}, from, s = %__MODULE__{messages: q, receiver: nil}) do
     case :queue.out(q) do
@@ -169,14 +182,14 @@ defmodule Bluetooth.HCI do
         {:noreply, %__MODULE__{s | receiver: from, timer: ref}}
         # if a package arrives and a timer is running, abort the timer
         # and send a reply
-      {message, new_q} ->
+      {{:value, message}, new_q} ->
         {:reply, message, %__MODULE__{s | messages: new_q}}
     end
   end
   # define a generic encoding and handling, it is not required to
   # differentiate between number of params here!
   def handle_call({func, args} = msg, from, s = %__MODULE__{port: port, calls: c})
-      when is_atom(func) and is_list(args) and is_port(port) do
+      when is_atom(func) and is_list(args) do
     Logger.debug "Call to #{inspect func} and state #{inspect s}"
     # send a message to the port
     ref = make_ref()
@@ -215,7 +228,9 @@ defmodule Bluetooth.HCI do
   def terminate(reason, _state = %__MODULE__{port: port}) do
     Logger.debug("HCI is shutting down for reason: #{inspect reason}")
     # kill the port
-    Port.close(port)
+    if (is_port(port)),
+      do: Port.close(port),
+    else: Process.exit(port, :normal)
     :ok
   end
 
@@ -237,7 +252,7 @@ defmodule Bluetooth.HCI do
     Logger.debug "Received event #{inspect event}"
     if receiver == nil do
       # enqueue the event
-      new_q = :queue.in(q, event)
+      new_q = :queue.in(event, q)
       %__MODULE__{state | messages: new_q}
     else
       # send the event directly to the waiting process
