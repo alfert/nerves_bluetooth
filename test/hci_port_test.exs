@@ -3,10 +3,12 @@ defmodule Bluetooth.Test.HCIPort do
 
   alias Bluetooth.HCI
   alias Bluetooth.HCI.Event
+  alias Bluetooth.HCI.PortEmulator
   require Logger
 
   setup do
-    {:ok, hci} = HCI.start_link()
+    {:ok, emulator} = PortEmulator.start_link()
+    {:ok, hci} = HCI.start_link(emulator)
     on_exit(:kill_HCI, fn ->
       ref = Process.monitor(hci)
       Process.exit(hci, :kill)
@@ -27,9 +29,11 @@ defmodule Bluetooth.Test.HCIPort do
     # this is the Read Local Version Information Command
     assert :ok == HCI.hci_send_command(0x04, 0x01, <<>>)
     Process.sleep(500)
-    event = HCI.receive_event()
-    assert %Event{event: :hci_command_complete_event, parameter: params} = event
-    assert params = <<1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>
+    event = HCI.hci_receive()
+    Logger.debug "Got hci_event: #{inspect event}"
+    assert %Event{event: :hci_command_complete_event} = event
+    %Event{parameter: params} = event
+    assert params == <<1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>
   end
 
 
