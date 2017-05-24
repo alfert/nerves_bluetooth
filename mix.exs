@@ -15,10 +15,10 @@ defmodule Rpi0Bt.Mixfile do
      archives: [nerves_bootstrap: "~> 0.3.0"],
      compilers: [:elixir_make] ++ Mix.compilers,
      make_clean: ["clean"],
-     make_env: %{"ERL_INTERFACE" => :code.lib_dir(:erl_interface) |> :binary.list_to_bin(), 
-                 "EXTRA_CFLAGS" => "-DDEBUG"},
+     make_env: %{"EXTRA_CFLAGS" => "-DDEBUG"},
      deps_path: "deps/#{@target}",
      build_path: "_build/#{@target}",
+     elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      aliases: aliases(@target),
@@ -43,6 +43,10 @@ defmodule Rpi0Bt.Mixfile do
      extra_applications: [:logger]]
   end
 
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_),     do: ["lib"]
+
   # Dependencies can be Hex packages:
   #
   #   {:my_dep, "~> 0.3.0"}
@@ -53,13 +57,13 @@ defmodule Rpi0Bt.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   def deps do
-    [{:nerves, "~> 0.5.0", runtime: false}] ++
-     [
+    [{:nerves, "~> 0.5.0", runtime: false},
       # {:nerves, "~> 0.5.0", runtime: false, path: "../nerves-sources/nerves",
       #     override: true},
      {:elixir_make, "~> 0.3", runtime: false},
     #  {:logger_file_backend, "~> 0.0.9"},
-     {:uuid, "~> 1.1"}
+     {:uuid, "~> 1.1"},
+     {:credo, "~> 0.7", only: [:dev, :test]}
     ] ++
     deps(@target)
   end
@@ -67,14 +71,15 @@ defmodule Rpi0Bt.Mixfile do
   # Specify target specific dependencies
   def deps("host"), do: []
   def deps("rpi0") do
+    Mix.shell.info([:green, "deps for rpi0"])
     [{:nerves_runtime, "~> 0.1.0"},
      {:"nerves_system_rpi0", "~> 0.13.0-dev", path: "../nerves-sources/nerves_system_rpi0",
-        runtime: false},
+        runtime: false, env: :dev},
       {:nerves_interim_wifi, "~> 0.2.0"}]
    end
   def deps(target) do
     [{:nerves_runtime, "~> 0.1.0"},
-     {:"nerves_system_#{target}", "~> 0.11.0", runtime: false},
+     {:"nerves_system_#{target}", "~> 0.12.0", runtime: false},
      {:nerves_interim_wifi, "~> 0.2.0"}]
   end
 

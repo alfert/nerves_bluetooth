@@ -177,7 +177,7 @@ int hci_write(byte *data, int size) {
   if (size < 1) {
     return 0;
   }
-
+  
   // Set the event filter for answer, taken from cmd_cmd from hcitool.c
   struct hci_filter flt;
 	hci_filter_clear(&flt);
@@ -211,13 +211,24 @@ int hci_write(byte *data, int size) {
 
 
 int hci_set_filter(byte *data, int size) {
+  struct hci_filter flt;
+  if (size != sizeof(flt)) {
+    LOG("size of filter data is %d instead of required %d. Aborting.", size, sizeof(flt));
+    exit(-1);
+  }
+
   if (setsockopt(hci_socket, SOL_HCI, HCI_FILTER, data, size) < 0) {
     int error = errno;
     LOG("setsockopts failed with: %d (%s)", error, strerror(error));
     return error;
   }
   return 0;
+  /**
+  
+  */
 }
+
+
 /** Simple test function */
 int hci_foo(int x) {
   return x+1;
