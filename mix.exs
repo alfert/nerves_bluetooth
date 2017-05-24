@@ -1,4 +1,4 @@
-defmodule Rpi0Bt.Mixfile do
+defmodule Bluetooth.Mixfile do
   use Mix.Project
 
   @target System.get_env("MIX_TARGET") || "host"
