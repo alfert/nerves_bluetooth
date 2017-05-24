@@ -2,6 +2,7 @@ defmodule Bluetooth.HCI.PortEmulator do
   @moduledoc """
   Emulates the port program for accessing HCI and enables testing
   on a host without accessing a real bluetooth device.
+
   """
 
   use GenServer
@@ -69,6 +70,7 @@ defmodule Bluetooth.HCI.PortEmulator do
   end
   def do_command(ogf, ocf, params, state) do
     Logger.error "Unknown command: ogf: #{inspect ogf}, ocf: #{inspect ocf}, params: #{inspect params}"
+    {:stop, {:error, :unknown_command}, state}
   end
 
   def do_send_event(pid, data) do
