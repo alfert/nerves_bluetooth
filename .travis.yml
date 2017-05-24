@@ -1,0 +1,15 @@
+language: elixir
+notifications:
+  recipients:
+    - klaus.alfert@gmail.com
+otp_release:
+  - 19.1
+elixir:
+  - 1.4.0
+before_script:
+  - mix local.hex --force
+  - mix local.rebar --force
+script: "MIX_ENV=test MIX_TARGET=host mix do deps.get, deps.compile, test"
+#after_script:
+#  - MIX_ENV=docs mix deps.get
+#  - MIX_ENV=docs mix inch.report
