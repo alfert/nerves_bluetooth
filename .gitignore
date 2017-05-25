@@ -3,6 +3,8 @@
 /db
 /deps
 /*.ez
+/doc
+/cover
 
 # Nerves artifacts
 /_images

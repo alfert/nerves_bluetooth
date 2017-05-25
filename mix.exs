@@ -1,4 +1,4 @@
-defmodule Rpi0Bt.Mixfile do
+defmodule Bluetooth.Mixfile do
   use Mix.Project
 
   @target System.get_env("MIX_TARGET") || "host"
@@ -63,7 +63,10 @@ defmodule Rpi0Bt.Mixfile do
      {:elixir_make, "~> 0.3", runtime: false},
     #  {:logger_file_backend, "~> 0.0.9"},
      {:uuid, "~> 1.1"},
-     {:credo, "~> 0.7", only: [:dev, :test]}
+     {:credo, "~> 0.7", only: [:dev, :test]},
+     {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
+     {:ex_doc, "~> 0.16", only: [:dev, :test]},
+     {:coverex, "~> 1.4", only: [:test]}
     ] ++
     deps(@target)
   end

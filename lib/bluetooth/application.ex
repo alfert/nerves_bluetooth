@@ -1,4 +1,4 @@
-defmodule Rpi0Bt.Application do
+defmodule Bluetooth.Application do
   use Application
 
   @interface :wlan0
