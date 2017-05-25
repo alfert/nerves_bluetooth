@@ -1,4 +1,6 @@
-# Rpi0Bt
+# Nerves Bluetooth
+
+This project enables Bluetooth support for Nerves.
 
 ## Bluetooth Spec Abstracts
 
