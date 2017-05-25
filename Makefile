@@ -25,7 +25,6 @@ ifeq ($(CROSSCOMPILE),)
 DEFAULT_TARGETS = priv
     endif
 		ifeq ($(TRAVIS),true)
-				$(echo Compilation under Travis without C library)
 DEFAULT_TARGETS = priv
 		endif
 endif
