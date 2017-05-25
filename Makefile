@@ -24,6 +24,10 @@ ifeq ($(CROSSCOMPILE),)
         $(warning Skipping C compilation unless targets explicitly passed to make.)
 DEFAULT_TARGETS = priv
     endif
+		ifeq ($(TRAVIS),true)
+				$(warning Compilation under Travis without C library)
+DEFAULT_TARGETS = priv
+		endif
 endif
 DEFAULT_TARGETS ?= priv priv/hci_ex
 
