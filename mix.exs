@@ -63,6 +63,7 @@ defmodule Bluetooth.Mixfile do
      {:elixir_make, "~> 0.3", runtime: false},
     #  {:logger_file_backend, "~> 0.0.9"},
      {:uuid, "~> 1.1"},
+     {:poison, "~> 3.0"},
      {:credo, "~> 0.7", only: [:dev, :test]},
      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
      {:ex_doc, "~> 0.16", only: [:dev, :test]},
