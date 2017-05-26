@@ -22,4 +22,21 @@ defmodule Bluetooth.AssignedNumbers do
           # IO.puts "Generate for id #{id} value #{name}"
           def member_name(unquote(id)), do: unquote(name)
         end
+
+
+  @doc """
+  Maps the version number to their long name
+  """
+  def version(0), do: "Bluetooth Core Specification 1.0b"
+  def version(1), do: "Bluetooth Core Specification 1.1"
+  def version(2), do: "Bluetooth Core Specification 1.2"
+  def version(3), do: "Bluetooth Core Specification 2.0 + EDR"
+  def version(4), do: "Bluetooth Core Specification 2.1 + EDR"
+  def version(5), do: "Bluetooth Core Specification 3.0 + HS"
+  def version(6), do: "Bluetooth Core Specification 4.0"
+  def version(7), do: "Bluetooth Core Specification 4.1"
+  def version(8), do: "Bluetooth Core Specification 4.2"
+  def version(9), do: "Bluetooth Core Specification 5.0"
+  def version(_), do: "Reserved"
+
 end

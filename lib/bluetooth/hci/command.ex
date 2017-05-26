@@ -35,10 +35,10 @@ defmodule Bluetooth.HCI.Commands do
         {:error, code}
       else
         {:ok, %{hci_version_code: hci_version,
-          hci_version: version(hci_version),
+          hci_version: AssignedNumbers.version(hci_version),
           hci_revision: hci_revision,
           pal_version_code: pal_version,
-          pal_version: version(pal_version),
+          pal_version: AssignedNumbers.version(pal_version),
           manufacturer_uuid: manufacturer,
           manufacturer: AssignedNumbers.company_name(manufacturer),
           pal_subversion: pal_subversion
@@ -46,16 +46,5 @@ defmodule Bluetooth.HCI.Commands do
       end
   end
 
-  def version(0), do: "Bluetooth® Core Specification 1.0b"
-  def version(1), do: "Bluetooth Core Specification 1.1"
-  def version(2), do: "Bluetooth Core Specification 1.2"
-  def version(3), do: "Bluetooth Core Specification 2.0 + EDR"
-  def version(4), do: "Bluetooth Core Specification 2.1 + EDR"
-  def version(5), do: "Bluetooth Core Specification 3.0 + HS"
-  def version(6), do: "Bluetooth Core Specification 4.0"
-  def version(7), do: "Bluetooth Core Specification 4.1"
-  def version(8), do: "Bluetooth Core Specification 4.2"
-  def version(9), do: "Bluetooth Core Specification 5.0"
-  def version(_), do: "Reserved"
 
 end
