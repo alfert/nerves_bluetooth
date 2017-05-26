@@ -19,6 +19,15 @@ defmodule Bluetooth.HCI.Commands do
   end
   def receive_local_name(<<code :: integer-size(8), _>>), do: {:error, code}
 
+  def write_local_name(name)
+  when is_binary(name) and :erlang.byte_size(name) == 248 do
+    HCI.create_command(0x03, 0x0015, name)
+  end
+  def write_local_name(name)
+  when is_binary(name) and :erlang.byte_size(name) < 248 do
+    HCI.create_command(0x03, 0x0015, name <> <<0>>)
+  end
+
   def read_local_version_info() do
     HCI.create_command(0x04, 0x01, <<>>)
   end
