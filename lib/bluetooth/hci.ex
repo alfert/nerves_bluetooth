@@ -33,9 +33,9 @@ defmodule Bluetooth.HCI do
 
       {:ok, hci} = HCI.start_server()
       :ok = HCI.init(hci)
-      true = HCI.is_dev_up(hci)
-      :ok = HCI.bind_raw(hci)
-      :ok = HCI.set_filter(hci)
+      true = HCI.hci_is_dev_up(hci)
+      :ok = HCI.hci_bind_raw(hci)
+      :ok = HCI.hci_set_filter(hci)
 
   The `set_filter` function enables all events on the device. Usually this is
   what you want.
@@ -59,6 +59,30 @@ defmodule Bluetooth.HCI do
       parameter: binary
     }
     defstruct [event: nil, parameter: ""]
+  end
+
+  @doc """
+  Opens a bluetooth device for sending and receiving. The only parameter
+  is a keyword list of options:
+
+  * `device`: user friendly name of the device (default: `NervesBluetooth`)
+  * `emulator`: if set to a pid, it takes the pid as an HCI Port emulator
+     to be able to test without hardware access. If not set or `nil`,
+     the real hardware device will be accessed (requires currently Linux).
+  * `options`: `GenServer` options for `start_link`
+  """
+  @spec open(Keyword.t) :: {:ok, pid} | {:error, any}
+  def open(options \\[device: "NervesBluetooth", emulator: nil]) do
+    gen_options = Keyword.get(options, :options, []) #default: empty list
+    {:ok, hci} = case Keyword.get(options, :emulator, nil) do
+      nil -> start_link(gen_options)
+      pid when is_pid(pid) -> start_link(pid, gen_options)
+    end
+    :ok = hci_init(hci)
+    true = hci_is_dev_up(hci)
+    0 = hci_bind_raw(hci, 0)
+    :ok = hci_set_filter(hci)
+    {:ok, hci}
   end
 
   @doc """
@@ -116,7 +140,9 @@ defmodule Bluetooth.HCI do
   end
 
   @doc """
-  Binds the reserved socket to be used for the data transfer.
+  Binds the reserved socket to be used for the data transfer with device.
+  The numerical device id `dev_id` is required. Returns the device id if the binding
+  was successful.
   """
   @spec hci_bind_raw(GenServer.server, non_neg_integer) :: integer
   def hci_bind_raw(hci \\ __MODULE__, dev_id) do

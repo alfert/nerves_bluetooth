@@ -18,10 +18,22 @@ defmodule Bluetooth.Test.HCIPort do
           :ok
       end
     end)
-    {:ok, %{hci: hci}}
+    {:ok, %{hci: hci, emulator: emulator}}
   end
 
- test  "Send a command and receive an event", %{hci: hci} do
+  test "open, command and receive" do
+    {:ok, emulator} = PortEmulator.start_link()
+    {:ok, hci} = HCI.open([emulator: emulator])
+    # this is the Read Local Version Information Command
+    assert :ok == HCI.hci_send_command(0x04, 0x01, <<>>)
+    event = HCI.hci_receive()
+    Logger.debug "Got hci_event: #{inspect event}"
+    assert %Event{event: :hci_command_complete_event} = event
+    %Event{parameter: params} = event
+    assert params == <<1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>
+  end
+
+  test  "Send a command and receive an event", %{hci: hci} do
     assert :ok == HCI.hci_init()
     assert true == HCI.hci_is_dev_up()
     assert 0 == HCI.hci_bind_raw(0);
