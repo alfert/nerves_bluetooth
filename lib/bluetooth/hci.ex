@@ -245,6 +245,7 @@ defmodule Bluetooth.HCI do
   @spec event_code(non_neg_integer) :: atom | {:hci_unknown_event, non_neg_integer}
   def event_code(0x00), do: :hci_async_event
   def event_code(0x0e), do: :hci_command_complete_event
+  def event_code(0x3e), do: :hci_le_meta_event
   def event_code(ev_code), do: {:hci_unknown_event, ev_code}
 
   @doc false
