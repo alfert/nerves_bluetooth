@@ -80,7 +80,7 @@ defmodule Bluetooth.HCI do
     end
     :ok = hci_init(hci)
     true = hci_is_dev_up(hci)
-    :ok = hci_bind_raw(hci)
+    0 = hci_bind_raw(hci, 0)
     :ok = hci_set_filter(hci)
     {:ok, hci}
   end
@@ -140,7 +140,9 @@ defmodule Bluetooth.HCI do
   end
 
   @doc """
-  Binds the reserved socket to be used for the data transfer.
+  Binds the reserved socket to be used for the data transfer with device.
+  The numerical device id `dev_id` is required. Returns the device id if the binding
+  was successful.
   """
   @spec hci_bind_raw(GenServer.server, non_neg_integer) :: integer
   def hci_bind_raw(hci \\ __MODULE__, dev_id) do
