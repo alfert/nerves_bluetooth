@@ -4,6 +4,7 @@ defmodule Bluetooth.Test.HCIPort do
   alias Bluetooth.HCI
   alias Bluetooth.HCI.Event
   alias Bluetooth.HCI.PortEmulator
+  alias Bluetooth.HCI.Event.CommandComplete
   require Logger
 
   setup do
@@ -19,6 +20,19 @@ defmodule Bluetooth.Test.HCIPort do
       end
     end)
     {:ok, %{hci: hci, emulator: emulator}}
+  end
+
+  test "more detailed command complete event" do
+    # Result of get_local_name (ogf: 0x03, ocf: 0x0014)
+    gen_event = %Event{event: :hci_command_complete_event,
+      parameter: <<1, 20, 12, 0, 107, 97, 108, 45, 117, 98, 117, 110, 116, 117, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0>>}
+
+      cc_ev = HCI.Event.decode(gen_event)
+      assert %CommandComplete{ogf: 0x03, ocf: 0x14} = cc_ev
+      name = "kal-ubuntu"
+
   end
 
   test "open, command and receive" do
