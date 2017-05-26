@@ -6,6 +6,7 @@ defmodule Bluetooth.HCI.Commands do
   This module does not to attempt to be complete but grows by need.
   """
   alias Bluetooth.HCI
+  alias Bluetooth.AssignedNumbers
 
   def read_local_name() do
     HCI.create_command(0x03, 0x0014, <<>>)
@@ -39,6 +40,7 @@ defmodule Bluetooth.HCI.Commands do
           pal_version_code: pal_version,
           pal_version: version(pal_version),
           manufacturer_uuid: manufacturer,
+          manufacturer: AssignedNumbers.company_name(manufacturer),
           pal_subversion: pal_subversion
         }}
       end

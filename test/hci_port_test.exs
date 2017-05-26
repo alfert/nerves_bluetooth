@@ -43,6 +43,7 @@ defmodule Bluetooth.Test.HCIPort do
     assert %CommandComplete{ogf: 0x04, ocf: 0x01, packets: 1} = cc_ev
     {:ok, version} = Commands.receive_local_version_info(cc_ev.parameter)
     assert version.hci_version_code == 7
+    assert String.contains?(version.manufacturer, "Broadcom")
   end
 
   test "open, command and receive" do
