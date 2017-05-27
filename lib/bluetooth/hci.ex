@@ -43,23 +43,12 @@ defmodule Bluetooth.HCI do
 
   use GenServer
   require Logger
+  alias Bluetooth.HCI.Event
 
   # Constants for HCI commands etc
   @hci_command_package_type 1
   @hci_event_package_type 4
 
-
-  defmodule Event do
-    @moduledoc "Struct for a HCI event"
-    @type hci_event_code_t :: nil | :hci_async_event | :hci_command_complete_event |
-      {:hci_unknown_event, pos_integer}
-
-    @type t :: %__MODULE__{
-      event: hci_event_code_t,
-      parameter: binary
-    }
-    defstruct [event: nil, parameter: ""]
-  end
 
   @doc """
   Opens a bluetooth device for sending and receiving. The only parameter
@@ -256,6 +245,7 @@ defmodule Bluetooth.HCI do
   @spec event_code(non_neg_integer) :: atom | {:hci_unknown_event, non_neg_integer}
   def event_code(0x00), do: :hci_async_event
   def event_code(0x0e), do: :hci_command_complete_event
+  def event_code(0x3e), do: :hci_le_meta_event
   def event_code(ev_code), do: {:hci_unknown_event, ev_code}
 
   @doc false
