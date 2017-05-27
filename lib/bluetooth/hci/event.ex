@@ -1,6 +1,7 @@
 defmodule Bluetooth.HCI.Event do
   @moduledoc "Struct for a HCI event"
 
+  alias Bluetooth.HCI.Commands
   # Constants for HCI commands etc
   @hci_command_package_type 1
   @hci_event_package_type 4
@@ -50,5 +51,25 @@ defmodule Bluetooth.HCI.Event do
     >> = <<opcode :: unsigned-integer-size(16)>>
     %CommandComplete{packets: packets, parameter: params, ogf: ogf, ocf: ocf}
   end
-  
+
+  @doc """
+  A first attempt to convert generic command events into more
+  specific events.
+  """
+  def command_event(%CommandComplete{ogf: ogf, ocf: ocf, parameter: params}) do
+    command_event(ogf, ocf, params)
+  end
+  def command_event(0x04, 0x0009, params), do: Commands.receive_bd_address(params)
+
+  ##########
+  #
+  # TODO:
+  # * UUID (6-Byte) to/from string (care for byte order!)
+  # * decoding of events => monomorphic to the final structure
+  # * Implement BLE in small parts incrementally
+  #   -> Apple's BluetoothCore-API as an example
+  #   -> Advertising, LE Scan, Remote-Name of Devices, Public-Addresses
+  #
+  ##########
+
 end
