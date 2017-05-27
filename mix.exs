@@ -7,9 +7,11 @@ defmodule Bluetooth.Mixfile do
     MIX_TARGET:   #{@target}
     MIX_ENV:      #{Mix.env}
   """, :reset])
+
+  @version File.read!("VERSION")
   def project do
-    [app: :rpi0_bt,
-     version: "0.1.0",
+    [app: :bluetooth,
+     version: @version,
      elixir: "~> 1.4.0",
      target: @target,
      archives: [nerves_bootstrap: "~> 0.3.0"],
@@ -47,15 +49,6 @@ defmodule Bluetooth.Mixfile do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_),     do: ["lib"]
 
-  # Dependencies can be Hex packages:
-  #
-  #   {:my_dep, "~> 0.3.0"}
-  #
-  # Or git/path repositories:
-  #
-  #   {:my_dep, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
-  #
-  # Type "mix help deps" for more examples and options
   def deps do
     [{:nerves, "~> 0.5.0", runtime: false},
       # {:nerves, "~> 0.5.0", runtime: false, path: "../nerves-sources/nerves",
