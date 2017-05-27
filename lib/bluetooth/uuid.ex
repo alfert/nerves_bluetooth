@@ -2,7 +2,9 @@ defmodule Bluetooth.UUID do
   @moduledoc """
   UUIDs play an important role in Bluetooth (LE). In particular, there
   are shrinked UUIDs to 16 and 32 bits, as well as the 6 byte version of
-  device IDs. This module provides functions for UUID manipulation.
+  device IDs (which are shown in reverse order).
+
+  This module provides functions for UUID conversion.
   """
 
   @base_uuid "00000000-0000-1000-8000-00805F9B34FB"
@@ -26,12 +28,20 @@ defmodule Bluetooth.UUID do
   def base_uuid_bin(), do: @base_uuid_bin
 
   @doc """
-  Converts a UUID in string form to their binary representation
+  Converts a UUID in string form to their binary representation, including
+  the 6 byte UUID for a device.
 
     iex> string_to_binary!("1234")
     <<0x12, 0x34>>
+
     iex> string_to_binary!("1234abcd")
     <<0x12, 0x34, 0xab, 0xcd>>
+
+    iex> string_to_binary!("AB:90:78:56:34:12")
+    <<0x1234567890AB :: unsigned-integer-size(48)>>
+
+    iex> string_to_binary!(base_uuid())
+    base_uuid_bin()
   """
   def string_to_binary!(s) when byte_size(s) == 4 do
     {value, ""} = Integer.parse(s, 16)
@@ -40,6 +50,15 @@ defmodule Bluetooth.UUID do
   def string_to_binary!(s) when byte_size(s) == 8 do
     {value, ""} = Integer.parse(s, 16)
     <<value :: integer-unsigned-size(32)>>
+  end
+  def string_to_binary!(s) when byte_size(s) == 17 do
+    String.split(s, ":")
+    |> Enum.reverse
+    |> Enum.map(fn b ->
+        {byte, ""} = Integer.parse(b, 16)
+        byte
+      end)
+    |> IO.iodata_to_binary()
   end
   def string_to_binary!(s) when byte_size(s) == 36 do
     UUID.string_to_binary!(s)
@@ -59,7 +78,7 @@ defmodule Bluetooth.UUID do
       base_uuid()
 
       iex> binary_to_string!(<<0x1234567890AB :: unsigned-integer-size(48)>>)
-      "12:34:56:78:90:AB"
+      "AB:90:78:56:34:12"
   """
   def binary_to_string!(<<i :: integer-unsigned-size(16)>>),
     do: Integer.to_string(i, 16) |> String.upcase
@@ -69,7 +88,8 @@ defmodule Bluetooth.UUID do
     do: UUID.binary_to_string!(b) |> String.upcase
   def binary_to_string!(b) when is_binary(b) and byte_size(b) == 6 do
     :binary.bin_to_list(b)
-    |> Enum.map(fn byte ->
+    |> Enum.reverse()
+    |> Stream.map(fn byte ->
         Integer.to_string(byte, 16) |> String.upcase
       end)
     |> Enum.intersperse(?:)
