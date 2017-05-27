@@ -25,6 +25,7 @@ defmodule Bluetooth.Mixfile do
      start_permanent: Mix.env == :prod,
      aliases: aliases(@target),
      kernel_modules: kernel_modules(@target),
+     test_coverage: [tool: Coverex.Task],
      deps: deps()]
   end
 
