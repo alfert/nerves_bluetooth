@@ -6,6 +6,7 @@ defmodule Bluetooth.Test.HCIPort do
   alias Bluetooth.HCI.PortEmulator
   alias Bluetooth.HCI.Event.CommandComplete
   alias Bluetooth.HCI.Commands
+  alias Bluetooth.UUID
   require Logger
 
   setup do
@@ -21,6 +22,12 @@ defmodule Bluetooth.Test.HCIPort do
       end
     end)
     {:ok, %{hci: hci, emulator: emulator}}
+  end
+
+  test "use the sync command command", %{hci: hci} do
+    {:ok, msg} = HCI.sync_command(hci, Commands.read_bd_address())
+
+    assert UUID.binary_to_string(msg) == "12:34:56:78:90:AB"
   end
 
   test "more detailed command complete event" do
