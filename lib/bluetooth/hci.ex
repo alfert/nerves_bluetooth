@@ -256,9 +256,7 @@ defmodule Bluetooth.HCI do
   def sync_command(hci \\ __MODULE__, command) do
     :ok = hci_send_command(hci, command)
     case hci_receive(hci) do
-      {:ok, msg} ->
-        interprete_event(msg)
-        |> Event.decode()
+      {:ok, msg} -> Event.decode(msg)
       error -> error
     end
   end

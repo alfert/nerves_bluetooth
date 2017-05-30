@@ -68,6 +68,10 @@ defmodule Bluetooth.HCI.PortEmulator do
     do_send_event(state.from, <<4, 14, 12, 1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>)
     {state, :ok}
   end
+  def do_command(0x04, 0x09, <<>>, state) do 
+    do_send_event(state.from, <<4, 14, 9, 9, 16, 0, 104, 109, 149, 50, 188, 172>>)
+    {state, :ok}
+  end
   def do_command(ogf, ocf, params, state) do
     Logger.error "Unknown command: ogf: #{inspect ogf}, ocf: #{inspect ocf}, params: #{inspect params}"
     {:stop, {:error, :unknown_command}, state}
