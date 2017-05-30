@@ -11,6 +11,7 @@ defmodule Bluetooth.HCI.PortEmulator do
   # Constants for HCI commands etc
   @hci_command_package_type 1
   @hci_event_package_type 4
+  @hci_command_complete_event 0x0e
 
   def start_link(hci_device \\ 0) do
     GenServer.start_link(__MODULE__, [hci_device])
@@ -65,11 +66,17 @@ defmodule Bluetooth.HCI.PortEmulator do
   end
 
   def do_command(0x04, 0x01, <<>>, state) do
-    do_send_event(state.from, <<4, 14, 12, 1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>)
+    msg = <<1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>
+    do_send_event(state.from, 
+      <<@hci_event_package_type, @hci_command_complete_event, byte_size(msg)>> <> msg)
     {state, :ok}
   end
   def do_command(0x04, 0x09, <<>>, state) do 
-    do_send_event(state.from, <<4, 14, 9, 9, 16, 0, 104, 109, 149, 50, 188, 172>>)
+    device_uuid = <<104, 109, 149, 50, 188, 172>>
+    opcode = <<1, 9, 16, 0 >>
+    # msg = <<1, 9, 16, 0, 104, 109, 149, 50, 188, 172>>
+    msg = opcode <> device_uuid
+    do_send_event(state.from, <<@hci_event_package_type, @hci_command_complete_event, byte_size(msg)>> <> msg)
     {state, :ok}
   end
   def do_command(ogf, ocf, params, state) do
