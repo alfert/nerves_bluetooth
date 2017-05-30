@@ -38,17 +38,14 @@ defmodule Bluetooth.Test.HCIPort do
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0>>}
 
-      cc_ev = HCI.Event.decode(gen_event)
-      assert %CommandComplete{ogf: 0x03, ocf: 0x14, packets: 1} = cc_ev
-      {:ok, name} = Commands.receive_local_name(cc_ev.parameter)
-      assert name == "kal-ubuntu"
+    {:ok, name} = HCI.Event.decode(gen_event)
+    assert name == "kal-ubuntu"
 
     # Result of read_local_version_information (ogf: 0x04, ocf: 0x01)
     gen_event = %Event{event: :hci_command_complete_event,
       parameter: <<1, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>}
-    cc_ev = HCI.Event.decode(gen_event)
-    assert %CommandComplete{ogf: 0x04, ocf: 0x01, packets: 1} = cc_ev
-    {:ok, version} = Commands.receive_local_version_info(cc_ev.parameter)
+
+    {:ok, version} = HCI.Event.decode(gen_event)
     assert version.hci_version_code == 7
     assert String.contains?(version.manufacturer, "Broadcom")
   end
@@ -58,7 +55,7 @@ defmodule Bluetooth.Test.HCIPort do
     {:ok, hci} = HCI.open([emulator: emulator])
     # this is the Read Local Version Information Command
     assert :ok == HCI.hci_send_command(0x04, 0x01, <<>>)
-    event = HCI.hci_receive()
+    {:ok, event} = HCI.hci_receive()
     Logger.debug "Got hci_event: #{inspect event}"
     assert %Event{event: :hci_command_complete_event} = event
     %Event{parameter: params} = event
@@ -73,7 +70,7 @@ defmodule Bluetooth.Test.HCIPort do
     # this is the Read Local Version Information Command
     assert :ok == HCI.hci_send_command(0x04, 0x01, <<>>)
     Process.sleep(500)
-    event = HCI.hci_receive()
+    {:ok, event} = HCI.hci_receive()
     Logger.debug "Got hci_event: #{inspect event}"
     assert %Event{event: :hci_command_complete_event} = event
     %Event{parameter: params} = event

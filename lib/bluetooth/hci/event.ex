@@ -60,6 +60,8 @@ defmodule Bluetooth.HCI.Event do
   specific events.
   """
   def command_event(0x04, 0x0009, params), do: Commands.receive_bd_address(params)
+  def command_event(0x04, 0x0001, params), do: Commands.receive_local_version_info(params)
+  def command_event(0x03, 0x14, params), do: Commands.receive_local_name(params)
   def command_event(%CommandComplete{ogf: ogf, ocf: ocf, parameter: params} = m) do
     Logger.debug("command event of #{inspect m}")
     command_event(ogf, ocf, params)
