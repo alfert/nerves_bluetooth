@@ -27,7 +27,7 @@ defmodule Bluetooth.Test.HCIPort do
   test "use the sync command command", %{hci: hci} do
     {:ok, msg} = HCI.sync_command(hci, Commands.read_bd_address())
 
-    assert UUID.binary_to_string(msg) == "AC:BC:32:95:6D:68"
+    assert UUID.binary_to_string!(msg) == "AC:BC:32:95:6D:68"
   end
 
   test "more detailed command complete event" do
