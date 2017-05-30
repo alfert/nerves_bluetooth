@@ -42,7 +42,7 @@ defmodule Bluetooth.Mixfile do
     [extra_applications: [:logger]]
   end
   def application(_target) do
-    [mod: {Rpi0Bt.Application, []},
+    [mod: {Bluetooth.Application, []},
      extra_applications: [:logger]]
   end
 
