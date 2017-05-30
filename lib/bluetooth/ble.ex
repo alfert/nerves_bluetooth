@@ -5,7 +5,7 @@ defmodule Bluetooth.GenBle do
   require Logger
 
   def start_link(driver \\ GenServer.whereis(Driver)) when is_pid(driver) do
-    GenServer.start_link(__MODULE__, [driver], [debug: [:log]])
+    GenServer.start_link(__MODULE__, [], [debug: [:log]])
   end
 
   @doc """
@@ -19,27 +19,17 @@ defmodule Bluetooth.GenBle do
     Driver.cmd("advertise on")
   end
 
-  defstruct [:driver, :monitor_ref, controllers: %{}, devices: %{}]
+  defstruct [device_id: "", devices: %{}]
 
-  def init([driver]) do
-    ref = Process.monitor(driver)
-    Driver.attach(driver, self())
-    {:ok, %__MODULE__{driver: driver, monitor_ref: ref}}
+  def init([]) do
+    {:ok, %__MODULE__{}}
   end
 
-  def handle_call(:controllers, _from, state = %__MODULE__{controllers: cs}) do
-    Map.values(cs)
-    |> reply(state)
-  end
   def handle_call(:devices, _from, state = %__MODULE__{devices: ds}) do
     Map.values(ds)
     |> reply(state)
   end
 
-  def handle_info({:DOWN, ref, :process, _pid, _}, state = %__MODULE__{monitor_ref: m_ref}) when ref == m_ref do
-    Logger.info("Driver #{inspect state.driver} is down")
-    {:stop, :driver_down, state}
-  end
   def handle_info(msg, state) when is_tuple(msg) do
     Logger.error "GenBle.handle_info: Ignoring unknown message #{inspect msg}"
     {:noreply, state}
