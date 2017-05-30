@@ -251,15 +251,16 @@ defmodule Bluetooth.HCI do
   @doc """
   Sends a command to the HCI device and waits for the answer.
   It is expected that the next incoming event is the answer of
-  the command. 
+  the command.
   """
   def sync_command(hci \\ __MODULE__, command) do
     :ok = hci_send_command(hci, command)
     case hci_receive(hci) do
-      {:ok, msg} -> 
+      {:ok, msg} ->
         Logger.debug("sync_command got msg = #{inspect msg}, call Event.decode!")
         Event.decode(msg)
-      error -> error
+      error -> Logger.error "sync_command got error: #{inspect error}"
+        error
     end
   end
 
@@ -332,7 +333,7 @@ defmodule Bluetooth.HCI do
         # if a package arrives and a timer is running, abort the timer
         # and send a reply
       {{:value, message}, new_q} ->
-        {:reply, message, %__MODULE__{s | messages: new_q}}
+        {:reply, {:ok, message}, %__MODULE__{s | messages: new_q}}
     end
   end
   # define a generic encoding and handling, it is not required to
