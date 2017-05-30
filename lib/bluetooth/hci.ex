@@ -256,7 +256,9 @@ defmodule Bluetooth.HCI do
   def sync_command(hci \\ __MODULE__, command) do
     :ok = hci_send_command(hci, command)
     case hci_receive(hci) do
-      {:ok, msg} -> Event.decode(msg)
+      {:ok, msg} -> 
+        Logger.debug("sync_command got msg = #{inspect msg}, call Event.decode!")
+        Event.decode(msg)
       error -> error
     end
   end
@@ -397,7 +399,7 @@ defmodule Bluetooth.HCI do
 
   defp do_handle_event(event_bin, state = %__MODULE__{messages: q, receiver: receiver}) do
     event = interprete_event(event_bin)
-    Logger.debug "Received event #{inspect event}"
+    Logger.debug "Received event #{inspect event} from binary: #{inspect event_bin}"
     if receiver == nil do
       # enqueue the event
       new_q = :queue.in(event, q)
