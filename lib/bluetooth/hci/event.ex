@@ -1,6 +1,8 @@
 defmodule Bluetooth.HCI.Event do
   @moduledoc "Struct for a HCI event"
 
+  require Logger
+
   alias Bluetooth.HCI.Commands
   # Constants for HCI commands etc
   @hci_command_package_type 1
@@ -58,7 +60,8 @@ defmodule Bluetooth.HCI.Event do
   specific events.
   """
   def command_event(0x04, 0x0009, params), do: Commands.receive_bd_address(params)
-  def command_event(%CommandComplete{ogf: ogf, ocf: ocf, parameter: params}) do
+  def command_event(%CommandComplete{ogf: ogf, ocf: ocf, parameter: params} = m) do
+    Logger.debug("command event of #{inspect m}")
     command_event(ogf, ocf, params)
   end
 
