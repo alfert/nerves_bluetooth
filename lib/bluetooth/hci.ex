@@ -296,9 +296,9 @@ defmodule Bluetooth.HCI do
   @doc false
   def init([]) do
     Process.flag(:trap_exit, true)
-    bin_dir = Application.app_dir(:rpi0_bt, "priv")
+    bin_dir = Application.app_dir(:bluetooth, "priv")
     hci = Path.join(bin_dir, "hci_ex")
-    {exec, args} = if Application.get_env(:rpi0_bt, :debug) do
+    {exec, args} = if Application.get_env(:bluetooth, :debug) do
       strace = "/usr/bin/strace"
       args = ["-o", "hci_ex.strace", hci]
       {strace, args}

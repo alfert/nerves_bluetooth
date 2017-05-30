@@ -11,12 +11,12 @@ use Mix.Config
 
 # import_config "#{Mix.Project.config[:target]}.exs"
 
-config :rpi0_bt, :wlan0,
+config :bluetooth, :wlan0,
   ssid: "your-ssid",
   key_mgmt: :"WPA-PSK",
   psk: "your-key"
 
-config :rpi0_bt, :debug, false
+config :bluetooth, :debug, false
 
 config :nerves, :firmware,
   rootfs_additions: "rootfs-additions"
