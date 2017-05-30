@@ -62,8 +62,8 @@ defmodule Bluetooth.HCI.Commands do
     HCI.create_command(0x04, 0x0009, <<>>)
   end
 
-  def reveive_bd_address(<<0x00, addr :: binary-size(6)>>), do: {:ok, addr}
-  def reveive_bd_address(<<code :: unsigned-integer-size(8), _rest::binary>>), do: {:error, code}
+  def receive_bd_address(<<0x00, addr :: binary-size(6)>>), do: {:ok, addr}
+  def receive_bd_address(<<code :: unsigned-integer-size(8), _rest::binary>>), do: {:error, code}
 
 
 
