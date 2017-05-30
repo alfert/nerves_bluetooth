@@ -248,6 +248,22 @@ defmodule Bluetooth.HCI do
   def event_code(0x3e), do: :hci_le_meta_event
   def event_code(ev_code), do: {:hci_unknown_event, ev_code}
 
+  @doc """
+  Sends a command to the HCI device and waits for the answer.
+  It is expected that the next incoming event is the answer of
+  the command. 
+  """
+  def sync_command(hci \\ __MODULE__, command) do
+    :ok = hci_send_command(hci, command)
+    case hci_receive(hci) do
+      {:ok, msg} ->
+        interprete_event(msg)
+        |> Event.decode()
+      error -> error
+    end
+  end
+
+
   @doc false
   def foo(hci \\ __MODULE__, x) do
     GenServer.call(hci, {:foo, [x]})
