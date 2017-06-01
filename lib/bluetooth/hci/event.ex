@@ -4,6 +4,7 @@ defmodule Bluetooth.HCI.Event do
   require Logger
 
   alias Bluetooth.HCI.Commands
+  alias Bluetooth.AssignedNumbers
   # Constants for HCI commands etc
   @hci_command_package_type 1
   @hci_event_package_type 4
@@ -59,9 +60,10 @@ defmodule Bluetooth.HCI.Event do
   A first attempt to convert generic command events into more
   specific events.
   """
-  def command_event(0x04, 0x0009, params), do: Commands.receive_bd_address(params)
-  def command_event(0x04, 0x0001, params), do: Commands.receive_local_version_info(params)
-  def command_event(0x03, 0x14, params), do: Commands.receive_local_name(params)
+  def command_event(0x03, 0x0001, params), do: decode_reset(params)
+  def command_event(0x03, 0x14, params), do: decode_local_name(params)
+  def command_event(0x04, 0x0009, params), do: decode_bd_address(params)
+  def command_event(0x04, 0x0001, params), do: decode_local_version_info(params)
   def command_event(%CommandComplete{ogf: ogf, ocf: ocf, parameter: params} = m) do
     Logger.debug("command event of #{inspect m}")
     command_event(ogf, ocf, params)
@@ -76,5 +78,47 @@ defmodule Bluetooth.HCI.Event do
   #   -> Advertising, LE Scan, Remote-Name of Devices, Public-Addresses
   #
   ##########
+
+  ####################################################################
+  #
+  # Link Level Commands (ogf = 00x03)
+  #
+  ####################################################################
+
+  def decode_reset(<<0>>), do: :ok
+  def decode_reset(<<code :: integer-size(8), _>>), do: {:error, code}
+
+  def decode_local_name(<<0 :: size(8), long_name :: binary>>) do
+    # the local name is 0-terminated or a full 248 bytes long UTF8 string
+    [name, _] = String.split(long_name, <<0>>, parts: 2)
+    {:ok, name}
+  end
+  def decode_local_name(<<code :: integer-size(8), _>>), do: {:error, code}
+
+  def decode_local_version_info(params) do
+    <<code :: integer-size(8),
+      hci_version :: integer-size(8),
+      hci_revision :: integer-little-size(16),
+      pal_version :: integer-size(8),
+      manufacturer :: integer-little-size(16),
+      pal_subversion :: integer-little-size(16)
+      >> = params
+      if (code != 0) do
+        {:error, code}
+      else
+        {:ok, %{hci_version_code: hci_version,
+          hci_version: AssignedNumbers.version(hci_version),
+          hci_revision: hci_revision,
+          pal_version_code: pal_version,
+          pal_version: AssignedNumbers.version(pal_version),
+          manufacturer_uuid: manufacturer,
+          manufacturer: AssignedNumbers.company_name(manufacturer),
+          pal_subversion: pal_subversion
+        }}
+      end
+  end
+
+  def decode_bd_address(<<0x00, addr :: binary-size(6)>>), do: {:ok, addr}
+  def decode_bd_address(<<code :: unsigned-integer-size(8), _rest::binary>>), do: {:error, code}
 
 end
