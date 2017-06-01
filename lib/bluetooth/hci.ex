@@ -212,11 +212,7 @@ defmodule Bluetooth.HCI do
   @spec create_command(non_neg_integer, non_neg_integer, binary) :: binary
   def create_command(ogf, ocf, params)
   when is_binary(params) and byte_size(params) < 256 and ogf < 64 and ocf < 1024 do
-    opcode_bin = <<
-      ogf :: unsigned-integer-size(6),
-      ocf :: unsigned-integer-size(10)
-    >>
-    Logger.debug "opcode: #{inspect opcode_bin}"
+    opcode_bin = op_code(ogf, ocf)
     <<opcode :: unsigned-integer-size(16)>> = opcode_bin
     package = <<
       @hci_command_package_type  :: unsigned-integer-size(8),
@@ -225,6 +221,16 @@ defmodule Bluetooth.HCI do
       params :: binary>>
     Logger.debug "Package is: #{inspect package}"
     package
+  end
+
+  @spec op_code(non_neg_integer, non_neg_integer) :: binary
+  def op_code(ogf, ocf) do
+    opcode_bin = <<
+      ogf :: unsigned-integer-size(6),
+      ocf :: unsigned-integer-size(10)
+    >>
+    Logger.debug "opcode: #{inspect opcode_bin}"
+    opcode_bin
   end
 
   @doc """
