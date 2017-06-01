@@ -68,21 +68,22 @@ defmodule Bluetooth.HCI.PortEmulator do
   end
 
   def do_command(0x03, 0x01, <<>>, state) do
-    Logger.debug "Reseting the emulator"
-    msg = <<@hci_1_package>> <> HCI.op_code(3, 1) <> <<1, 0>>
+    Logger.debug "Emulator: Reseting"
+    msg = <<@hci_1_package>> <> op_code(3, 1) <> <<0>>
     do_send_event(state.from,
       <<@hci_event_package_type, @hci_command_complete_event, byte_size(msg)>> <> msg)
     {state, :ok}
   end
   def do_command(0x04, 0x01, <<>>, state) do
-    msg = <<@hci_1_package, 1, 16, 0, 7, 25, 18, 7, 15, 0, 119, 33>>
+    Logger.debug "Emulator: Local version info"
+    msg = <<@hci_1_package>> <> op_code(04, 01) <> << 0, 7, 25, 18, 7, 15, 0, 119, 33>>
     do_send_event(state.from,
       <<@hci_event_package_type, @hci_command_complete_event, byte_size(msg)>> <> msg)
     {state, :ok}
   end
   def do_command(0x04, 0x09, <<>>, state) do
     device_uuid = <<104, 109, 149, 50, 188, 172>>
-    opcode = <<@hci_1_package, 9, 16, 0 >>
+    opcode = <<@hci_1_package>>  <> op_code(4, 9) <> <<0>> # , 9, 16, 0 >>
     msg = opcode <> device_uuid
     do_send_event(state.from, <<@hci_event_package_type, @hci_command_complete_event, byte_size(msg)>> <> msg)
     {state, :ok}
@@ -95,6 +96,18 @@ defmodule Bluetooth.HCI.PortEmulator do
   def do_send_event(pid, data) do
     msg = :erlang.term_to_binary({:event, data})
     send(pid, {self(), {:data, msg}})
+  end
+
+  @spec op_code(non_neg_integer, non_neg_integer) :: binary
+  def op_code(ogf, ocf) do
+    opcode_bin = <<
+      ogf :: unsigned-integer-size(6),
+      ocf :: unsigned-integer-size(10)
+    >>
+    Logger.debug "opcode: #{inspect opcode_bin}"
+    # opcode_bin
+    <<opcode :: unsigned-integer-size(16)>> = opcode_bin
+    <<opcode :: unsigned-integer-little-size(16)>>
   end
 
   def foo(state, x) do

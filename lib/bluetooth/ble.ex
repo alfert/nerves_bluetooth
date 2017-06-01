@@ -31,7 +31,7 @@ defmodule Bluetooth.GenBLE do
   def init(opts) do
     emu = Keyword.get(opts, :emulator)
     {:ok, hci} = HCI.open([device: "NervesBluetooth", emulator: emu])
-    # :ok = HCI.sync_command(hci, Commands.reset())
+    :ok = HCI.sync_command(hci, Commands.reset())
     dev_id = HCI.sync_command(hci, Commands.read_bd_address())
     {:ok, %__MODULE__{hci: hci, device_id: dev_id}}
   end
