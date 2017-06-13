@@ -15,6 +15,11 @@ defmodule Bluetooth.GenBLE do
     Bluetooth.UUID.binary_to_string!(id)
   end
 
+  def local_name(dev) do
+    {:ok, name} = GenServer.call(dev, :local_name)
+    name
+  end
+
     @doc """
   Creates an iBeacon advertisement with `major` and `minor` values
   """
@@ -26,14 +31,15 @@ defmodule Bluetooth.GenBLE do
     Driver.cmd("advertise on")
   end
 
-  defstruct [device_id: "", devices: %{}, hci: nil]
+  defstruct [device_id: "", devices: %{}, hci: nil, name: ""]
 
   def init(opts) do
     emu = Keyword.get(opts, :emulator)
     {:ok, hci} = HCI.open([device: "NervesBluetooth", emulator: emu])
     :ok = HCI.sync_command(hci, Commands.reset())
     dev_id = HCI.sync_command(hci, Commands.read_bd_address())
-    {:ok, %__MODULE__{hci: hci, device_id: dev_id}}
+    name = HCI.sync_command(hci, Commands.read_local_name())
+    {:ok, %__MODULE__{hci: hci, device_id: dev_id, name: name}}
   end
 
   def handle_call(:devices, _from, state = %__MODULE__{devices: ds}) do
@@ -42,6 +48,14 @@ defmodule Bluetooth.GenBLE do
   end
   def handle_call({:get_dev_id}, _from, state = %__MODULE__{device_id: dev_id}) do
     reply(dev_id, state)
+  end
+  def handle_call(:local_name, _from, state = %__MODULE__{name: name}) do
+    reply(name, state)
+  end
+  def handle_call({:set_local_name, new_name}, _from, state = %__MODULE__{hci: hci}) do
+    :ok = HCI.sync_command(hci, Commands.write_local_name(new_name))
+    %__MODULE__{state | name: new_name}
+    |> ok()
   end
 
   def handle_info(msg, state) when is_tuple(msg) do
