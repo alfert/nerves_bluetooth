@@ -11,8 +11,10 @@ defmodule Bluetooth.Test.BLE do
     assert is_pid(ble)
 
     uuid = GenBLE.device_id(ble)
-
     assert uuid == "AC:BC:32:95:6D:68"
+
+    name = GenBLE.local_name(ble)
+    assert name = "HCI Emulator"
   end
 
 end
