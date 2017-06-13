@@ -70,27 +70,35 @@ defmodule Bluetooth.HCI.PortEmulator do
   def do_command(0x03, 0x01, <<>>, state) do
     Logger.debug "Emulator: Reseting"
     msg = <<@hci_1_package>> <> op_code(3, 1) <> <<0>>
-    do_send_event(state.from,
-      <<@hci_event_package_type, @hci_command_complete_event, byte_size(msg)>> <> msg)
+    do_send_msg(state.from, msg)
+    {state, :ok}
+  end
+  def do_command(0x03, 0x014, <<>>, state) do
+    Logger.debug "Emulator: read local name"
+    msg = <<@hci_1_package>> <> op_code(0x03, 0x014) <> <<0, "HCI Emulator", 0>>
+    do_send_msg(state.from, msg)
     {state, :ok}
   end
   def do_command(0x04, 0x01, <<>>, state) do
     Logger.debug "Emulator: Local version info"
     msg = <<@hci_1_package>> <> op_code(04, 01) <> << 0, 7, 25, 18, 7, 15, 0, 119, 33>>
-    do_send_event(state.from,
-      <<@hci_event_package_type, @hci_command_complete_event, byte_size(msg)>> <> msg)
+    do_send_msg(state.from, msg)
     {state, :ok}
   end
   def do_command(0x04, 0x09, <<>>, state) do
     device_uuid = <<104, 109, 149, 50, 188, 172>>
     opcode = <<@hci_1_package>>  <> op_code(4, 9) <> <<0>> # , 9, 16, 0 >>
     msg = opcode <> device_uuid
-    do_send_event(state.from, <<@hci_event_package_type, @hci_command_complete_event, byte_size(msg)>> <> msg)
+    do_send_msg(state.from, msg)
     {state, :ok}
   end
   def do_command(ogf, ocf, params, state) do
     Logger.error "#{__MODULE__}: Unknown command: ogf: #{inspect ogf}, ocf: #{inspect ocf}, params: #{inspect params}"
     {:stop, {:error, :unknown_command}, state}
+  end
+
+  def do_send_msg(pid, msg) do
+    do_send_event(pid, <<@hci_event_package_type, @hci_command_complete_event, byte_size(msg)>> <> msg)
   end
 
   def do_send_event(pid, data) do
