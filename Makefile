@@ -53,9 +53,9 @@ HCI_DEFINES = -DCONFIG_CTRL_IFACE -DCONFIG_CTRL_IFACE_UNIX
 
 # Linux: LDFLAGS += -lrt $(ERL_LIB)
 LDFLAGS += $(ERL_LDFLAGS)
-LDFLAGS += -lrt -pthread
+LDFLAGS += -lrt -pthread -g
 CFLAGS ?= -O2 -Wall -Wextra -Wno-unused-parameter -pthread -std=c99
-CFLAGS += $(EXTRA_CFLAGS) $(ERL_CFLAGS)
+CFLAGS += $(EXTRA_CFLAGS) $(ERL_CFLAGS) -g
 # CLFAGS += $(ERL_CFLAGS)
 CC ?= $(CROSSCOMPILE)gcc
 
