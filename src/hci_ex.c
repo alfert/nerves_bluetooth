@@ -53,6 +53,7 @@ int main() {
   event.data.fd = STDIN_FILENO;
   if (epoll_ctl(epollfd, EPOLL_CTL_ADD, STDIN_FILENO, &event) != 0) {
       LOG("epoll_ctl add stdin failed.");
+      free(events);
       return 1;
   }
 
@@ -63,6 +64,7 @@ int main() {
     int number_of_events = epoll_wait(epollfd, events, MAX_EVENTS, -1);
     if (number_of_events < 0) {
       LOG("epoll_wait failed.");
+      free(events);
       return 2;
     }
     if (number_of_events == 0) {
@@ -83,13 +85,14 @@ int main() {
           }
           else {
             LOG("Bad fd: %d\n", events[i].data.fd);
+            free(events);
             return 5;
           }
       }
     }
   }
   close(epollfd);
-
+  free(events);
   LOG("Stopping hci_ex");
   return 0;
 }
