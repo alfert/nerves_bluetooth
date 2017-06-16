@@ -16,3 +16,6 @@ erl_crash.dump
 /priv/hci_ex
 /.vscode
 hci_ex.log
+/hci_ex.strace
+/hci_ex.val.log
+/hci_ex.val.xml
