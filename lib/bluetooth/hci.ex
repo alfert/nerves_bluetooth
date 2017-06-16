@@ -305,11 +305,18 @@ defmodule Bluetooth.HCI do
     Process.flag(:trap_exit, true)
     bin_dir = Application.app_dir(:bluetooth, "priv")
     hci = Path.join(bin_dir, "hci_ex")
-    {exec, args} = if Application.get_env(:bluetooth, :debug) do
-      strace = "/usr/bin/strace"
-      args = ["-o", "hci_ex.strace", hci]
-      {strace, args}
-    else
+    debug = Application.get_env(:bluetooth, :debug)
+    Logger.debug "Debug env is #{inspect debug}"
+    {exec, args} = case debug do
+      :strace -> 
+        strace = "/usr/bin/strace"
+        args = ["-o", "hci_ex.strace", hci]
+        {strace, args}
+      :valgrind ->
+        valgrind = "/usr/bin/valgrind"
+        args = ["--leak-check=yes", "--log-file=hci_ex.val.log", "--xml=yes", "--xml-file=hci_ex.val.xml", hci]
+        {valgrind, args}
+      _ ->
       {hci, []}
     end
 
@@ -346,7 +353,7 @@ defmodule Bluetooth.HCI do
   # differentiate between number of params here!
   def handle_call({func, args} = msg, from, s = %__MODULE__{port: port, calls: c})
       when is_atom(func) and is_list(args) do
-    Logger.debug "Call to #{inspect func} and state #{inspect s}"
+    Logger.debug "Call to #{inspect func} with args #{inspect args} in state #{inspect s}"
     # send a message to the port
     ref = make_ref()
     port_msg = {ref, msg} |> :erlang.term_to_binary()

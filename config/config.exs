@@ -16,7 +16,8 @@ config :bluetooth, :wlan0,
   key_mgmt: :"WPA-PSK",
   psk: "your-key"
 
-config :bluetooth, :debug, false
+# debug: :strace, :valgrind, false
+config :bluetooth, :debug, :valgrind
 
 config :nerves, :firmware,
   rootfs_additions: "rootfs-additions"
