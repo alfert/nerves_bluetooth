@@ -56,4 +56,11 @@ int hci_set_filter(byte *data, int size);
 int hci_foo(int x);
 
 
+/** 
+ * I am not sure about this function. But it is part of the HCI_RAW_CHANNEL code in Noble and 
+ * is always called after a positive read. Since my own version blocks after a positive read, 
+ * it might be that Linux kernel has some problems and which are adressed here. 
+ */
+void kernelDisconnectWorkArounds(int length, char* data);
+
 #endif

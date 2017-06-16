@@ -18,10 +18,12 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <assert.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
+#include <bluetooth/l2cap.h>
 
 // we do not include hci_lib.h, because the functions defined there are
 // implemented in Elixir instead.
@@ -60,6 +62,9 @@ int hci_socket = -1;
 int _dev_id;
 uint8_t _address[6];
 uint8_t _address_type;
+// for handling the kernel problems 
+int _l2cap_socket = -1;
+int _l2cap_handle = -1;
 
 /* =========================================*/
 
@@ -226,6 +231,62 @@ int hci_set_filter(byte *data, int size) {
   /**
   
   */
+}
+
+
+/** 
+ * I am not sure about this function. But it is part of the HCI_RAW_CHANNEL code in Noble and 
+ * is always called after a positive read. Since my own version blocks after a positive read, 
+ * it might be that Linux kernel has some problems and which are adressed here. 
+ */
+void kernelDisconnectWorkArounds(int length, char* data) {
+  // HCI Event - LE Meta Event - LE Connection Complete => manually create L2CAP socket to force kernel to book keep
+  // HCI Event - Disconn Complete =======================> close socket from above
+
+  if (length == 22 && data[0] == 0x04 && data[1] == 0x3e && data[2] == 0x13 && data[3] == 0x01 && data[4] == 0x00) {
+    int l2socket;
+    struct sockaddr_l2 l2a;
+    unsigned short l2cid;
+    unsigned short handle = *((unsigned short*)(&data[5]));
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+    l2cid = ATT_CID;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+    l2cid = bswap_16(ATT_CID);
+#else
+    #error "Unknown byte order"
+#endif
+
+    l2socket = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_L2CAP);
+
+    memset(&l2a, 0, sizeof(l2a));
+    l2a.l2_family = AF_BLUETOOTH;
+    l2a.l2_cid = l2cid;
+    memcpy(&l2a.l2_bdaddr, _address, sizeof(l2a.l2_bdaddr));
+    l2a.l2_bdaddr_type = _address_type;
+    bind(l2socket, (struct sockaddr*)&l2a, sizeof(l2a));
+
+    memset(&l2a, 0, sizeof(l2a));
+    l2a.l2_family = AF_BLUETOOTH;
+    memcpy(&l2a.l2_bdaddr, &data[9], sizeof(l2a.l2_bdaddr));
+    l2a.l2_cid = l2cid;
+    l2a.l2_bdaddr_type = data[8] + 1; // BDADDR_LE_PUBLIC (0x01), BDADDR_LE_RANDOM (0x02)
+
+    connect(l2socket, (struct sockaddr *)&l2a, sizeof(l2a));
+
+    // The original code has here a C++ map of handles to sockets. We allow only one here and see
+    // what happens
+    assert(_l2cap_socket == -1);
+    _l2cap_socket = l2socket;
+    _l2cap_handle = handle;
+  } else if (length == 7 && data[0] == 0x04 && data[1] == 0x05 && data[2] == 0x04 && data[3] == 0x00) {
+    unsigned short handle = *((unsigned short*)(&data[4]));
+
+    assert(_l2cap_handle == handle);
+    close(_l2cap_socket);
+    _l2cap_handle = -1;
+    _l2cap_socket = -1;
+  }
 }
 
 
