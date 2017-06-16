@@ -153,15 +153,31 @@ int read_from_stdin() {
   // do not use a while loop, the looping occurs outside. 
   if ((read_count = read_cmd(buf)) > 0) {
     LOG("read command successful, read %d bytes\n", read_count);
+    
+    #ifdef DEBUG
+    char hex[1 + read_count * 2]; 
+    for(int i = 0; i < read_count; i++) {
+      int v = (int) buf[i];
+      sprintf(hex+2*i, "%.2x", v);
+    }
+    hex[read_count * 2 - 1] = 0;
+    LOG("Input: %s", hex);
+    #endif
+
     /***************************
     * Decode the protocol between Elixir and C:
     * {ref, {func_atom, [args]}}
     ****************************/
     tuplep = erl_decode(buf);
+    LOG("tuplep created");
     refp = erl_element(1, tuplep);
+    LOG("refp created");
     fun_tuple_p = erl_element(2, tuplep);
+    LOG("fun_tuple_p created");
     fnp = erl_element(1, fun_tuple_p);
+    LOG("fnp created");
     argp = erl_element(2, fun_tuple_p);
+    LOG("argp created");
 
     LOG("Got a call to do: %s\n", ERL_ATOM_PTR(fnp));
 
