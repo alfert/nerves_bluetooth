@@ -101,16 +101,19 @@ int main() {
 }
 
 int process_stdin_event(void) {
-  if (read_from_stdin() < 0) {
-    if (errno != EAGAIN && errno != EWOULDBLOCK) {
-      // no more data available on stdin: the file is closed
-      // therefore, we exit here.
-      return -1;
-    } else {
-      return 0;
+  while(TRUE) {
+    if (read_from_stdin() < 0) {
+      if (errno != EAGAIN && errno != EWOULDBLOCK) {
+        // no more data available on stdin: the file is closed
+        // therefore, we exit here.
+        return -1;
+      } else {
+        return 0;
+      }
     }
+    return 1;
+
   }
-  return 1;
 }
 
 int process_socket_event(void) {
@@ -121,12 +124,16 @@ int process_socket_event(void) {
   while (TRUE) {
     length = read(hci_socket, data, sizeof(data));
     if (length < 0 ) {
-      if (errno == EAGAIN) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
         // no more data available. finish the loop.
         return 1;
       }
     } else {
       process_hci_data(data, length);
+      // We only use RAW HCI Sockets, therefore call this function.
+      // kernelDisconnectWorkArounds(length, data);
+      if (length < (int) sizeof(data))
+        return 0;
     }
   }
 }
