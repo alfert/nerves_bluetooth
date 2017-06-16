@@ -1,6 +1,7 @@
 /* HCI_EX port main program, based on ei.h for using erlang binary terms */
 
 #include <erl_interface.h>
+#include <ei.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +30,7 @@ void process_hci_data(char *buffer, int length);
 void check_for_hci_socket_changes(int epollfd, int *old_hci_socket);
 int process_stdin_event();
 int process_socket_event();
+void report_eterm_usage();
 
 // Constants
 #define MAX_EVENTS 64
@@ -60,6 +62,7 @@ int main() {
   bool finish = FALSE;
 
   while (!finish) {
+    report_eterm_usage();
     check_for_hci_socket_changes(epollfd, &old_hci_socket);
     int number_of_events = epoll_wait(epollfd, events, MAX_EVENTS, -1);
     if (number_of_events < 0) {
@@ -340,4 +343,16 @@ void check_for_hci_socket_changes(int epollfd, int *old_hci_socket) {
     }
   }
 
+}
+
+void report_eterm_usage() {
+  #ifdef DEBUG
+  
+  long unsigned allocated, freed;
+
+  erl_eterm_statistics(&allocated,&freed);
+  LOG("currently allocated blocks: %ld\n",allocated);
+  LOG("length of freelist: %ld\n",freed);
+
+  #endif
 }
