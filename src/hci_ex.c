@@ -140,7 +140,7 @@ int read_from_stdin() {
   // the resulting pair as an ETERM
   ETERM *result_pair;
 
-  byte buf[100];
+  byte* buf = calloc(sizeof(byte), 1024);
 
   int read_count = -1;
 
@@ -277,13 +277,15 @@ int read_from_stdin() {
     erl_free_term(argp);
     erl_free_term(return_val_p);
     erl_free_compound(result_pair);
-    erl_free_term(refp);
+    erl_free_term(refp);  
+    free(buf);
 
     return read_count;
   }
   else {
     LOG("could only read %d bytes\n", read_count);
   }
+  free(buf);
   return -1;  
 }
 
