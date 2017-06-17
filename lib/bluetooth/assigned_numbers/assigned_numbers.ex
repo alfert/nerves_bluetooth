@@ -109,5 +109,6 @@ defmodule Bluetooth.AssignedNumbers do
   def error_string(0x42), do: "Unknown Advertising Identifier"
   def error_string(0x43), do: "Limit Reached"
   def error_string(0x44), do: "Operation Cancelled by Host"
+  def error_string(any), do: "Unknwon Error: #[inspect any}"
 
 end
