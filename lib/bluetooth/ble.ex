@@ -11,13 +11,14 @@ defmodule Bluetooth.GenBLE do
   end
 
   def device_id(dev) do
-    {:ok, id} = GenServer.call(dev, {:get_dev_id})
-    Bluetooth.UUID.binary_to_string!(id)
+    dev
+    |> GenServer.call({:get_dev_id})
+    |> Bluetooth.UUID.binary_to_string!()
   end
 
   def local_name(dev) do
-    {:ok, name} = GenServer.call(dev, :local_name)
-    name
+    dev
+    |> GenServer.call(:local_name)
   end
 
     @doc """
@@ -36,9 +37,9 @@ defmodule Bluetooth.GenBLE do
   def init(opts) do
     emu = Keyword.get(opts, :emulator)
     {:ok, hci} = HCI.open([device: "NervesBluetooth", emulator: emu])
-    :ok = HCI.sync_command(hci, Commands.reset())
-    dev_id = HCI.sync_command(hci, Commands.read_bd_address())
-    name = HCI.sync_command(hci, Commands.read_local_name())
+    # :ok = HCI.sync_command(hci, Commands.reset())
+    {:ok, dev_id} = HCI.sync_command(hci, Commands.read_bd_address())
+    {:ok, name} = HCI.sync_command(hci, Commands.read_local_name())
     {:ok, %__MODULE__{hci: hci, device_id: dev_id, name: name}}
   end
 
