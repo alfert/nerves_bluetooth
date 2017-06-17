@@ -9,6 +9,7 @@
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/types.h>
+#include <assert.h>
 
 #include "global.h"
 #include "hci_interface.h"
@@ -208,7 +209,6 @@ int read_from_stdin() {
       } else {
         return_val_p = erl_mk_atom("nil");
       }
-      erl_free_term(param);
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_SEND_COMMAND, strlen(HCI_SEND_COMMAND)) == 0) {
       LOG("found HCI_SEND_COMMAND");
@@ -223,7 +223,6 @@ int read_from_stdin() {
       } else {
         return_val_p = erl_mk_atom(strerror(res));
       }
-      erl_free_term(param);
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_SET_FILTER, strlen(HCI_SET_FILTER)) == 0) {
       LOG("found HCI_SET_FILTER");
@@ -238,7 +237,6 @@ int read_from_stdin() {
       } else {
         return_val_p = erl_mk_atom(strerror(res));
       }
-      erl_free_term(param);
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_DEV_ID_FOR, strlen(HCI_DEV_ID_FOR)) == 0) {
       // int device_id = -1; // currently no used.
@@ -260,7 +258,6 @@ int read_from_stdin() {
       } else {
         return_val_p = erl_mk_atom("nil");
       }
-      erl_free_term(param);
     }
     else if (strncmp(ERL_ATOM_PTR(fnp), HCI_IS_DEV_UP, strlen(HCI_IS_DEV_UP)) == 0) {
       if (hci_is_dev_up()) {
@@ -280,7 +277,6 @@ int read_from_stdin() {
       int i = ERL_INT_VALUE(param);
       res = hci_foo(i);
       return_val_p = erl_mk_int(res);
-      erl_free_term(param);
     } else return_val_p = NULL;
     LOG("Assemble result");
 
@@ -295,12 +291,13 @@ int read_from_stdin() {
     write_cmd(buf, erl_term_len(result_pair));
 
     LOG("Free erlang term variables");
+    // It is enough to free the compounds, since they contain 
+    // all other erlang term, which are free at the same time. 
+    // In report_eterm_usage we check that this is really the 
+    // case including an assert on 0 allocated blocks after
+    // each processing round. 
     erl_free_compound(tuplep);
-    erl_free_term(fnp);
-    erl_free_term(argp);
-    erl_free_term(return_val_p);
     erl_free_compound(result_pair);
-    erl_free_term(refp);  
     free(buf);
 
     return read_count;
@@ -333,8 +330,8 @@ void process_hci_data(char *buffer, int length) {
 
   LOG("Free erlang term variables");
   erl_free_compound(result_pair);
-  erl_free(event_atom_p);
-  erl_free(binary_p);
+  //erl_free(event_atom_p);
+  //erl_free(binary_p);
 
 }
 
@@ -378,6 +375,7 @@ void report_eterm_usage() {
   erl_eterm_statistics(&allocated,&freed);
   LOG("currently allocated blocks: %ld\n",allocated);
   LOG("length of freelist: %ld\n",freed);
+  assert(allocated == 0);
 
   #endif
 }
