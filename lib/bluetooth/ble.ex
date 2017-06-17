@@ -6,19 +6,28 @@ defmodule Bluetooth.GenBLE do
   alias Bluetooth.HCI
   alias Bluetooth.HCI.Commands
 
+  @type t :: GenServer.server
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, [debug: [:log]])
   end
 
+  @spec device_id(t) :: String.t
   def device_id(dev) do
     dev
     |> GenServer.call({:get_dev_id})
     |> Bluetooth.UUID.binary_to_string!()
   end
 
+  @spec local_name(t) :: String.t
   def local_name(dev) do
     dev
     |> GenServer.call(:local_name)
+  end
+
+  @spec set_local_name(t, String.t) :: :ok | {:error, any}
+  def set_local_name(dev, name) when is_binary(name) and byte_size(name) <= 248 do
+    GenServer.call(dev, {:set_local_name, name})
   end
 
     @doc """
@@ -54,9 +63,17 @@ defmodule Bluetooth.GenBLE do
     reply(name, state)
   end
   def handle_call({:set_local_name, new_name}, _from, state = %__MODULE__{hci: hci}) do
-    :ok = HCI.sync_command(hci, Commands.write_local_name(new_name))
-    %__MODULE__{state | name: new_name}
-    |> ok()
+    case HCI.sync_command(hci, Commands.write_local_name(new_name)) do
+      :ok -> 
+        {:ok, name} = HCI.sync_command(hci, Commands.read_local_name())
+        if (name == new_name) do
+          %__MODULE__{state | name: new_name} |> ok()
+        else
+          Logger.error "BLE name is #{inspect name}, not set to #{inspect new_name}"
+          reply({:error, :new_name_is_not_set}, state)
+        end
+      error -> reply(error, state)
+    end
   end
 
   def handle_info(msg, state) when is_tuple(msg) do
