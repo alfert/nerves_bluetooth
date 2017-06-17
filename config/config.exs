@@ -17,7 +17,7 @@ config :bluetooth, :wlan0,
   psk: "your-key"
 
 # debug: :strace, :valgrind, false
-config :bluetooth, :debug, :valgrind
+config :bluetooth, :debug, false
 
 config :nerves, :firmware,
   rootfs_additions: "rootfs-additions"
