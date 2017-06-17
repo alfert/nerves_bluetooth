@@ -314,7 +314,9 @@ defmodule Bluetooth.HCI do
         {strace, args}
       :valgrind ->
         valgrind = "/usr/bin/valgrind"
-        args = ["--leak-check=yes", "--log-file=hci_ex.val.log", "--xml=yes", "--xml-file=hci_ex.val.xml", "--show-possibly-lost=no"]
+        args = ["--leak-check=yes", "--log-file=hci_ex.val.log", 
+                "--xml=yes", "--xml-file=hci_ex.val.xml", 
+                "--show-possibly-lost=no", "--suppressions=src/suppress.standard" ]
         {valgrind, args ++ [hci]}
       _ ->
       {hci, []}
