@@ -60,8 +60,9 @@ defmodule Bluetooth.HCI.Event do
   A first attempt to convert generic command events into more
   specific events.
   """
-  def command_event(0x03, 0x0001, params), do: decode_reset(params)
+  def command_event(0x03, 0x0001, params), do: decode_ok(params)
   def command_event(0x03, 0x0014, params), do: decode_local_name(params)
+  def command_event(0x03, 0x0015, params), do: decode_ok(params)
   def command_event(0x04, 0x0009, params), do: decode_bd_address(params)
   def command_event(0x04, 0x0001, params), do: decode_local_version_info(params)
   def command_event(%CommandComplete{ogf: ogf, ocf: ocf, parameter: params} = m) do
@@ -79,16 +80,24 @@ defmodule Bluetooth.HCI.Event do
   #
   ##########
 
+  @doc """
+  This is a generic event decoding for :ok / :error events 
+  """
+  def decode_ok(<<0>>), do: :ok
+  def decode_ok(<<0, suprising_rest_data :: binary>>) do
+    Logger.error "Ouch, there is some additional data - ignoring #{inspect suprising_rest_data}"
+    :ok
+  end
+  def decode_ok(<<code :: integer-size(8), _ :: binary>>), do: {:error, code}
+
+
   ####################################################################
   #
   # Link Level Commands (ogf = 00x03)
   #
   ####################################################################
 
-  def decode_reset(<<0>>), do: :ok
-  def decode_reset(<<code :: integer-size(8), _>>), do: {:error, code}
-
-  def decode_local_name(<<0 :: size(8), long_name :: binary>>) do
+    def decode_local_name(<<0 :: size(8), long_name :: binary>>) do
     # the local name is 0-terminated or a full 248 bytes long UTF8 string
     [name, _] = String.split(long_name, <<0>>, parts: 2)
     {:ok, name}
